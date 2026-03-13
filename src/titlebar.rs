@@ -2,9 +2,9 @@
 //!
 //! Emits [TitlebarMessage] that the app maps to [iced::window] tasks in its update function.
 
+use crate::style;
 use iced::widget::{button, container, mouse_area, row, svg, text};
-use iced::widget::button::{Status as ButtonStatus};
-use iced::{Color, Element, Length};
+use iced::{Element, Length};
 use iced::widget::svg::Handle as SvgHandle;
 
 /// Messages emitted by the custom titlebar widget.
@@ -73,19 +73,21 @@ where
 
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
+        .style(|theme, status| style::min_max_button_style(&style::TitlebarStyle::default(), theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
 
     let max_btn = button(max_icon)
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
+        .style(|theme, status| style::min_max_button_style(&style::TitlebarStyle::default(), theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
 
     let close_btn = button(close_icon)
         .on_press(to_message(TitlebarMessage::Close))
-        .style(close_button_style::<Message>)
+        .style(|theme, status| style::close_button_style(&style::TitlebarStyle::default(), theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
@@ -96,6 +98,7 @@ where
         .align_y(iced::Alignment::Center);
 
     container(row)
+        .style(|_theme| style::bar_container_style(&style::TitlebarStyle::default()))
         .height(DEFAULT_TITLEBAR_HEIGHT)
         .width(Length::Fill)
         .into()
@@ -128,29 +131,3 @@ fn close_handle() -> SvgHandle {
     SvgHandle::from_memory(CLOSE_SVG.as_bytes().to_vec())
 }
 
-/// Style for the close button: normal background matches the titlebar; hovered turns red.
-fn close_button_style<Message>(_theme: &iced::Theme, status: ButtonStatus) -> button::Style
-where
-    Message: Clone + 'static,
-{
-    use button::Status::*;
-
-    let mut style = button::Style::default();
-
-    // Base: dark gray like the titlebar
-    style.background = Some(iced::Background::Color(Color::from_rgb8(32, 32, 32)));
-    style.border = iced::Border::default().width(0.0);
-    style.text_color = Color::from_rgb8(240, 240, 240);
-
-    match status {
-        Hovered | Pressed => {
-            // Red hover/pressed background, like native Windows close button
-            style.background = Some(iced::Background::Color(Color::from_rgb8(232, 17, 35)));
-        }
-        Active | Disabled => {
-            // Keep the base dark background
-        }
-    }
-
-    style
-}

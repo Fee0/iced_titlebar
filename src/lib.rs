@@ -22,8 +22,10 @@
 //! For resizing by dragging edges and corners, wrap your content with [resize_handles] and handle
 //! the direction message with `window::drag_resize(window_id, direction)`.
 
+pub mod style;
 pub mod titlebar;
 pub mod resize;
 
+pub use style::TitlebarStyle;
 pub use titlebar::{titlebar, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT};
 pub use resize::{resize_handles, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE};
