@@ -217,7 +217,7 @@ where
     let min_icon = svg(minimize_handle())
         .width(10)
         .height(10)
-        .style(move |_theme, _status| iced::widget::svg::Style {
+        .style(move |_theme, _status| svg::Style {
             color: Some(s_min.icon),
         });
 
@@ -229,14 +229,14 @@ where
     let max_icon = svg(max_handle)
         .width(10)
         .height(10)
-        .style(move |_theme, _status| iced::widget::svg::Style {
+        .style(move |_theme, _status| svg::Style {
             color: Some(s_max.icon),
         });
 
     let close_icon = svg(close_handle())
         .width(10)
         .height(10)
-        .style(move |_theme, _status| iced::widget::svg::Style {
+        .style(move |_theme, _status| svg::Style {
             color: Some(s_close.icon),
         });
 
@@ -329,11 +329,11 @@ fn restore_handle() -> SvgHandle {
     SvgHandle::from_memory(RESTORE_SVG.as_bytes().to_vec())
 }
 
-/// SVG handle for the close icon: an X (crisp 10×10, 1px stroke).
+/// SVG handle for the close icon: an X (crisp 10×10, 1px stroke, butt caps to match reference).
 fn close_handle() -> SvgHandle {
     const CLOSE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" stroke-width="1"/>
-  <line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" stroke-width="1"/>
+  <line x1="0.0" y1="0.0" x2="10.0" y2="10.0" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
+  <line x1="10.0" y1="0.0" x2="0.0" y2="10.0" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
 </svg>"#;
     SvgHandle::from_memory(CLOSE_SVG.as_bytes().to_vec())
 }
