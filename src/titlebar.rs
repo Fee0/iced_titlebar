@@ -4,6 +4,7 @@
 //! Also provides resize handles for borderless windows (edges and corners).
 
 use crate::style::{self, TitleAlignment};
+use iced::alignment::{Horizontal }; 
 use iced::mouse::Interaction;
 use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, column, container, mouse_area, row, svg, text};
@@ -216,31 +217,44 @@ where
     let s_close = style;
     let s_bar = style;
 
-    let min_icon = svg(minimize_handle())
-        .width(10)
-        .height(10)
-        .style(move |_theme, _status| svg::Style {
+    let icon_padding = iced::Padding {
+        top: 4.0,
+        right: 0.0,
+        bottom: 0.0,
+        left: 0.0,
+    };
+
+    let min_icon = container(svg(minimize_handle()).width(10).height(10).style(
+        move |_theme, _status| svg::Style {
             color: Some(s_min.icon),
-        });
+        },
+    ))
+    .padding(icon_padding)
+    .align_x(Horizontal::Center);
 
     let max_handle = if is_maximized {
         restore_handle()
     } else {
         maximize_handle()
     };
-    let max_icon = svg(max_handle)
-        .width(10)
-        .height(10)
-        .style(move |_theme, _status| svg::Style {
-            color: Some(s_max.icon),
-        });
+    let max_icon = container(
+        svg(max_handle)
+            .width(10)
+            .height(10)
+            .style(move |_theme, _status| svg::Style {
+                color: Some(s_max.icon),
+            }),
+    )
+    .padding(icon_padding)
+    .align_x(Horizontal::Center);
 
-    let close_icon = svg(close_handle())
-        .width(10)
-        .height(10)
-        .style(move |_theme, _status| svg::Style {
+    let close_icon = container(svg(close_handle()).width(10).height(10).style(
+        move |_theme, _status| svg::Style {
             color: Some(s_close.icon),
-        });
+        },
+    ))
+    .padding(icon_padding)
+    .align_x(Horizontal::Center);
 
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
