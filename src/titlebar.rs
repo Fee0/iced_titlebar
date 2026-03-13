@@ -1,10 +1,11 @@
 //! Custom titlebar widget for iced applications with decorations disabled.
 //!
 //! Emits [TitlebarMessage] that the app maps to [iced::window] tasks in its update function.
+//! Also provides resize handles for borderless windows (edges and corners).
 
-use crate::resize::{resize_handles_with_sizes, RESIZE_EDGE_SIZE};
 use crate::style::{self, TitleAlignment};
-use iced::widget::{button, container, mouse_area, row, svg, text, column};
+use iced::mouse::Interaction;
+use iced::widget::{button, column, container, mouse_area, row, svg, text};
 use iced::{Alignment, Element, Length};
 use iced::widget::svg::Handle as SvgHandle;
 
@@ -281,4 +282,87 @@ fn close_handle() -> SvgHandle {
   <line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 </svg>"#;
     SvgHandle::from_memory(CLOSE_SVG.as_bytes().to_vec())
+}
+
+// ---------------------------------------------------------------------------
+// Resize handles (for borderless windows)
+// ---------------------------------------------------------------------------
+
+/// Width or height of edge resize strips in pixels.
+pub const RESIZE_EDGE_SIZE: f32 = 5.0;
+
+/// Size of corner resize handles (each side) in pixels.
+pub const RESIZE_CORNER_SIZE: f32 = 5.0;
+
+fn resize_cursor_for(direction: iced::window::Direction) -> Interaction {
+    use iced::window::Direction;
+    match direction {
+        Direction::North | Direction::South => Interaction::ResizingVertically,
+        Direction::East | Direction::West => Interaction::ResizingHorizontally,
+        Direction::NorthEast | Direction::SouthWest => Interaction::ResizingDiagonallyUp,
+        Direction::NorthWest | Direction::SouthEast => Interaction::ResizingDiagonallyDown,
+    }
+}
+
+fn resize_handles_with_sizes<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+    to_message: impl Fn(iced::window::Direction) -> Message + 'a,
+    edge_size: f32,
+    corner_size: f32,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a,
+{
+    let resize_region = |direction: iced::window::Direction, width: Length, height: Length| {
+        container(
+            mouse_area(
+                container(text(" ").size(1))
+                    .width(Length::Fill)
+                    .height(Length::Fill),
+            )
+            .interaction(resize_cursor_for(direction))
+            .on_press(to_message(direction)),
+        )
+        .width(width)
+        .height(height)
+    };
+
+    let nw = resize_region(iced::window::Direction::NorthWest, Length::Fixed(corner_size), Length::Fixed(corner_size));
+    let n = resize_region(iced::window::Direction::North, Length::Fill, Length::Fixed(edge_size));
+    let ne = resize_region(iced::window::Direction::NorthEast, Length::Fixed(corner_size), Length::Fixed(corner_size));
+
+    let w = resize_region(iced::window::Direction::West, Length::Fixed(edge_size), Length::Fill);
+    let e = resize_region(iced::window::Direction::East, Length::Fixed(edge_size), Length::Fill);
+
+    let sw = resize_region(iced::window::Direction::SouthWest, Length::Fixed(corner_size), Length::Fixed(corner_size));
+    let s = resize_region(iced::window::Direction::South, Length::Fill, Length::Fixed(edge_size));
+    let se = resize_region(iced::window::Direction::SouthEast, Length::Fixed(corner_size), Length::Fixed(corner_size));
+
+    let top_row = row![nw, n, ne].spacing(0);
+    let mid_row = row![w, content.into(), e].spacing(0);
+    let bot_row = row![sw, s, se].spacing(0);
+
+    column![top_row, mid_row, bot_row]
+        .spacing(0)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into()
+}
+
+/// Wraps content with invisible resize handles on all four edges and four corners.
+///
+/// When window decorations are disabled, use this so the user can resize by dragging
+/// the edges (North, South, East, West) and corners (NorthWest, NorthEast, SouthWest, SouthEast).
+/// On left press, each handle emits a message with the corresponding [iced::window::Direction];
+/// map it to `window::drag_resize(window_id, direction)` in your update.
+///
+/// For a titlebar + content layout with configurable edge size, use [Titlebar::with_content] instead.
+pub fn resize_handles<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+    to_message: impl Fn(iced::window::Direction) -> Message + 'a,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a,
+{
+    resize_handles_with_sizes(content, to_message, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE)
 }

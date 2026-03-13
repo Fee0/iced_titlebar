@@ -3,7 +3,7 @@
 
 use iced::widget::container;
 use iced::widget::{container as container_widget, text};
-use iced::{Alignment, Color, Element, Length, Subscription, Task};
+use iced::{Color, Element, Length, Subscription, Task};
 
 use iced_custom_titlebar::{titlebar, TitlebarMessage};
 
