@@ -2,8 +2,9 @@
 //!
 //! Emits [TitlebarMessage] that the app maps to [iced::window] tasks in its update function.
 
+use crate::resize::{resize_handles_with_sizes, RESIZE_EDGE_SIZE};
 use crate::style::{self, TitleAlignment};
-use iced::widget::{button, container, mouse_area, row, svg, text};
+use iced::widget::{button, container, mouse_area, row, svg, text, column};
 use iced::{Alignment, Element, Length};
 use iced::widget::svg::Handle as SvgHandle;
 
@@ -26,7 +27,10 @@ pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 32.0;
 
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
-/// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height), [title_alignment](Titlebar::title_alignment). Call [.into()](Into::into) to get an `Element`. You must call [on_message](Titlebar::on_message) for the bar to be interactive.
+/// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height),
+/// [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge). Call [.into()](Into::into) to get an `Element`,
+/// or [with_content](Titlebar::with_content) to stack the bar with content and wrap everything in resize handles.
+/// You must call [on_message](Titlebar::on_message) for the bar to be interactive.
 pub struct Titlebar<'a, Message> {
     /// Title text shown in the draggable area.
     pub title: String,
@@ -34,6 +38,9 @@ pub struct Titlebar<'a, Message> {
     pub style: style::TitlebarStyle,
     /// Height of the bar in pixels.
     pub height: f32,
+    /// Optional resize edge thickness (in pixels) for integrated resize handles.
+    /// When None, the default [RESIZE_EDGE_SIZE] is used.
+    pub resize_edge_size: Option<f32>,
     /// Callback to convert [TitlebarMessage] into your app's `Message`. Required for interaction.
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
 }
@@ -63,6 +70,7 @@ pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
         height: DEFAULT_TITLEBAR_HEIGHT,
+        resize_edge_size: None,
         on_message: None,
     }
 }
@@ -77,6 +85,7 @@ impl<'a, Message> Titlebar<'a, Message> {
             title: self.title,
             style: self.style,
             height: self.height,
+            resize_edge_size: self.resize_edge_size,
             on_message: Some(Box::new(f)),
         }
     }
@@ -90,6 +99,13 @@ impl<'a, Message> Titlebar<'a, Message> {
     /// Sets the height of the titlebar in pixels.
     pub fn height(mut self, h: f32) -> Self {
         self.height = h;
+        self
+    }
+
+    /// Sets the resize edge/corner thickness (in pixels) for integrated resize handles.
+    /// Used by [with_content](Titlebar::with_content) when wrapping content in resize handles.
+    pub fn resize_edge(mut self, size: f32) -> Self {
+        self.resize_edge_size = Some(size.max(0.0));
         self
     }
 
@@ -109,6 +125,31 @@ where
             "titlebar: on_message must be set before converting to Element (e.g. titlebar(\"App\").on_message(Message::Titlebar).into())",
         );
         build_titlebar_element(value.title, value.style, value.height, to_message)
+    }
+}
+
+impl<'a, Message> Titlebar<'a, Message>
+where
+    Message: Clone + 'a + 'static,
+{
+    /// Builds a layout with this titlebar on top of `content`, wrapped in resize handles.
+    ///
+    /// The resize edge thickness is taken from [resize_edge](Titlebar::resize_edge) if set,
+    /// otherwise it falls back to [RESIZE_EDGE_SIZE].
+    pub fn with_content(
+        self,
+        content: impl Into<Element<'a, Message>>,
+        to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
+    ) -> Element<'a, Message> {
+        let edge = self.resize_edge_size.unwrap_or(RESIZE_EDGE_SIZE);
+        let bar: Element<'a, Message> = self.into();
+
+        let inner = column![bar, content.into()]
+            .spacing(0)
+            .width(Length::Fill)
+            .height(Length::Fill);
+
+        resize_handles_with_sizes(inner, to_resize, edge, edge)
     }
 }
 

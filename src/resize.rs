@@ -24,23 +24,16 @@ pub const RESIZE_EDGE_SIZE: f32 = 5.0;
 /// Size of corner resize handles (each side) in pixels.
 pub const RESIZE_CORNER_SIZE: f32 = 5.0;
 
-/// Wraps content with invisible resize handles on all four edges and four corners.
-///
-/// On left press, each handle emits a message with the corresponding [iced::window::Direction],
-/// which the app should map to `window::drag_resize(window_id, direction)` in update.
-///
-/// * `content` — The main UI (e.g. a column with titlebar + body).
-/// * `to_message` — Converts [iced::window::Direction] into your app's `Message`.
-pub fn resize_handles<'a, Message>(
+/// Internal helper that builds resize handles with the given edge and corner sizes.
+pub(crate) fn resize_handles_with_sizes<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     to_message: impl Fn(iced::window::Direction) -> Message + 'a,
+    edge_size: f32,
+    corner_size: f32,
 ) -> Element<'a, Message>
 where
     Message: Clone + 'a,
 {
-    let edge_size = RESIZE_EDGE_SIZE;
-    let corner_size = RESIZE_CORNER_SIZE;
-
     // Use size(1) — cosmic-text panics on line height 0; handles stay effectively invisible at 1px.
     let resize_region = |direction: iced::window::Direction, width: Length, height: Length| {
         container(
@@ -76,4 +69,21 @@ where
         .width(Length::Fill)
         .height(Length::Fill)
         .into()
+}
+
+/// Wraps content with invisible resize handles on all four edges and four corners.
+///
+/// On left press, each handle emits a message with the corresponding [iced::window::Direction],
+/// which the app should map to `window::drag_resize(window_id, direction)` in update.
+///
+/// * `content` — The main UI (e.g. a column with titlebar + body).
+/// * `to_message` — Converts [iced::window::Direction] into your app's `Message`.
+pub fn resize_handles<'a, Message>(
+    content: impl Into<Element<'a, Message>>,
+    to_message: impl Fn(iced::window::Direction) -> Message + 'a,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a,
+{
+    resize_handles_with_sizes(content, to_message, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE)
 }

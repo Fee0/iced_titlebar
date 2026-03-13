@@ -2,10 +2,10 @@
 //! Run with: cargo run --example custom_titlebar
 
 use iced::widget::container;
-use iced::widget::{column, container as container_widget, text};
+use iced::widget::{container as container_widget, text};
 use iced::{Alignment, Color, Element, Length, Subscription, Task};
 
-use iced_custom_titlebar::{resize_handles, titlebar, TitlebarMessage};
+use iced_custom_titlebar::{titlebar, TitlebarMessage};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)
@@ -57,8 +57,6 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 }
 
 fn view(_state: &State) -> Element<'_, Message> {
-    let bar: Element<'_, Message> =
-        titlebar("Custom Titlebar Demo").on_message(Message::Titlebar).into();
     let content = container_widget(
         text("Custom titlebar — drag the bar, use the buttons. Resize from edges and corners.")
             .size(16),
@@ -68,13 +66,10 @@ fn view(_state: &State) -> Element<'_, Message> {
     .center_x(Length::Fill)
     .center_y(Length::Fill);
 
-    let inner = column![bar, content]
-        .spacing(0)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .align_x(Alignment::Center);
-
-    let with_handles = resize_handles(inner, Message::Resize);
+    let with_handles: Element<'_, Message> = titlebar("Custom Titlebar Demo")
+        .on_message(Message::Titlebar)
+        .resize_edge(1.0)
+        .with_content(content, Message::Resize);
 
     container_widget(with_handles)
         .width(Length::Fill)
