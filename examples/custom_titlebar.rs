@@ -59,10 +59,10 @@ impl std::fmt::Display for StylePreset {
 fn titlebar_style_for(preset: StylePreset) -> TitlebarStyle {
     match preset {
         StylePreset::Dark => TitlebarStyle {
-            bar: Color::from_rgb8(30, 30, 30),
+            bar: Color::from_rgb8(0, 0, 0),
             button_hover: Color::from_rgb8(60, 60, 60),
             close_hover: Color::from_rgb8(232, 17, 35),
-            icon: Color::from_rgb8(240, 240, 240),
+            icon: Color::from_rgb8(255, 255, 255),
         },
         StylePreset::Light => TitlebarStyle {
             bar: Color::from_rgb8(240, 240, 240),

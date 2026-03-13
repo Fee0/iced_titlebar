@@ -187,22 +187,31 @@ where
     .width(Length::Fill)
     .height(Length::Fill);
 
-    let min_icon = svg(minimize_handle())
-        .width(16)
-        .height(16);
-
-    let max_icon = svg(maximize_handle())
-        .width(16)
-        .height(16);
-
-    let close_icon = svg(close_handle())
-        .width(14)
-        .height(14);
-
     let s_min = style;
     let s_max = style;
     let s_close = style;
     let s_bar = style;
+
+    let min_icon = svg(minimize_handle())
+        .width(16)
+        .height(16)
+        .style(move |_theme, _status| iced::widget::svg::Style {
+            color: Some(s_min.icon),
+        });
+
+    let max_icon = svg(maximize_handle())
+        .width(16)
+        .height(16)
+        .style(move |_theme, _status| iced::widget::svg::Style {
+            color: Some(s_max.icon),
+        });
+
+    let close_icon = svg(close_handle())
+        .width(14)
+        .height(14)
+        .style(move |_theme, _status| iced::widget::svg::Style {
+            color: Some(s_close.icon),
+        });
 
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
