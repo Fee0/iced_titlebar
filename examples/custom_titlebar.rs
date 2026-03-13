@@ -43,7 +43,6 @@ enum StylePreset {
     #[default]
     Dark,
     Light,
-    Blue,
 }
 
 impl std::fmt::Display for StylePreset {
@@ -51,7 +50,6 @@ impl std::fmt::Display for StylePreset {
         match self {
             StylePreset::Dark => write!(f, "Dark"),
             StylePreset::Light => write!(f, "Light"),
-            StylePreset::Blue => write!(f, "Blue"),
         }
     }
 }
@@ -69,13 +67,7 @@ fn titlebar_style_for(preset: StylePreset) -> TitlebarStyle {
             button_hover: Color::from_rgb8(220, 220, 220),
             close_hover: Color::from_rgb8(232, 17, 35),
             icon: Color::from_rgb8(40, 40, 40),
-        },
-        StylePreset::Blue => TitlebarStyle {
-            bar: Color::from_rgb8(30, 60, 120),
-            button_hover: Color::from_rgb8(50, 90, 160),
-            close_hover: Color::from_rgb8(180, 50, 50),
-            icon: Color::from_rgb8(240, 240, 240),
-        },
+        }
     }
 }
 
@@ -163,7 +155,7 @@ fn view(state: &State) -> Element<'_, Message> {
     )
     .width(120);
 
-    let style_options = [StylePreset::Dark, StylePreset::Light, StylePreset::Blue];
+    let style_options = [StylePreset::Dark, StylePreset::Light];
     let style_pick = pick_list(style_options, Some(state.style_preset), Message::StylePresetChanged)
         .width(120);
 
