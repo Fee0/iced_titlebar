@@ -1,7 +1,6 @@
 //! Titlebar and window chrome styling.
 //!
-//! Centralizes colors for the titlebar bar, default button background, min/max hover, close hover,
-//! container border, icon color, and title alignment.
+//! Centralizes colors for the titlebar bar, default button background, min/max hover, close hover, and icon color.
 
 use iced::widget::button::{self, Status as ButtonStatus};
 use iced::widget::container;
@@ -29,14 +28,12 @@ impl std::fmt::Display for TitleAlignment {
     }
 }
 
-/// Style for the titlebar and its buttons: bar and border colors, button hover colors, icon color, title alignment.
+/// Style for the titlebar and its buttons: bar and button hover colors, icon color.
 ///
 /// - `bar`: Background of the whole titlebar and default background of all three buttons.
 /// - `button_hover`: Hover/pressed background for minimize and maximize buttons.
 /// - `close_hover`: Hover/pressed background for the close button (typically red).
 /// - `icon`: Color used for the SVG window-control icons (minimize, maximize, close) and any button text. SVGs use `currentColor` so they inherit this.
-/// - `border_color`: Color of the titlebar container border (when border width > 0).
-/// - `title_alignment`: Placement of the title text in the draggable area (left, center, right).
 #[derive(Debug, Clone, Copy)]
 pub struct TitlebarStyle {
     /// Background color for the titlebar and for all buttons in their default state.
@@ -47,10 +44,6 @@ pub struct TitlebarStyle {
     pub close_hover: Color,
     /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
     pub icon: Color,
-    /// Color of the titlebar container border. Used when border width > 0 (width is set on [Titlebar](crate::titlebar::Titlebar) via [border_width](crate::titlebar::Titlebar::border_width)).
-    pub border_color: Color,
-    /// Placement of the title text inside the titlebar: left, center, or right.
-    pub title_alignment: TitleAlignment,
 }
 
 impl Default for TitlebarStyle {
@@ -60,22 +53,14 @@ impl Default for TitlebarStyle {
             button_hover: Color::from_rgb8(60, 60, 60),
             close_hover: Color::from_rgb8(232, 17, 35),
             icon: Color::from_rgb8(240, 240, 240),
-            border_color: Color::from_rgb8(49, 51, 53),
-            title_alignment: TitleAlignment::default(),
         }
     }
 }
 
-/// Returns the container style for the titlebar (background and optional border).
-/// `border_width` is provided by the [Titlebar] widget, not the style.
-pub fn bar_container_style(style: &TitlebarStyle, border_width: f32) -> container::Style {
+/// Returns the container style for the titlebar (background only; no border).
+pub fn bar_container_style(style: &TitlebarStyle) -> container::Style {
     container::Style::default()
         .background(iced::Background::Color(style.bar))
-        .border(
-            iced::Border::default()
-                .width(border_width)
-                .color(style.border_color),
-        )
 }
 
 /// Returns the button style for minimize and maximize: bar color by default, `button_hover` when hovered/pressed.

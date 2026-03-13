@@ -20,7 +20,6 @@ struct State {
     window_id: Option<iced::window::Id>,
     title: String,
     height: f32,
-    border_width: f32,
     resize_edge: f32,
     title_alignment: TitleAlignment,
     style_preset: StylePreset,
@@ -32,7 +31,6 @@ impl Default for State {
             window_id: None,
             title: "Custom Titlebar Demo".to_string(),
             height: 32.0,
-            border_width: 0.0,
             resize_edge: 1.0,
             title_alignment: TitleAlignment::default(),
             style_preset: StylePreset::default(),
@@ -65,24 +63,18 @@ fn titlebar_style_for(preset: StylePreset) -> TitlebarStyle {
             button_hover: Color::from_rgb8(60, 60, 60),
             close_hover: Color::from_rgb8(232, 17, 35),
             icon: Color::from_rgb8(240, 240, 240),
-            border_color: Color::from_rgb8(160, 160, 160),
-            title_alignment: TitleAlignment::Center,
         },
         StylePreset::Light => TitlebarStyle {
             bar: Color::from_rgb8(240, 240, 240),
             button_hover: Color::from_rgb8(220, 220, 220),
             close_hover: Color::from_rgb8(232, 17, 35),
             icon: Color::from_rgb8(40, 40, 40),
-            border_color: Color::from_rgb8(180, 180, 180),
-            title_alignment: TitleAlignment::Center,
         },
         StylePreset::Blue => TitlebarStyle {
             bar: Color::from_rgb8(30, 60, 120),
             button_hover: Color::from_rgb8(50, 90, 160),
             close_hover: Color::from_rgb8(180, 50, 50),
             icon: Color::from_rgb8(240, 240, 240),
-            border_color: Color::from_rgb8(80, 120, 200),
-            title_alignment: TitleAlignment::Center,
         },
     }
 }
@@ -94,7 +86,6 @@ enum Message {
     Resize(iced::window::Direction),
     TitleChanged(String),
     HeightChanged(f32),
-    BorderWidthChanged(f32),
     ResizeEdgeChanged(f32),
     TitleAlignmentChanged(TitleAlignment),
     StylePresetChanged(StylePreset),
@@ -135,10 +126,6 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.height = h;
             Task::none()
         }
-        Message::BorderWidthChanged(w) => {
-            state.border_width = w;
-            Task::none()
-        }
         Message::ResizeEdgeChanged(e) => {
             state.resize_edge = e;
             Task::none()
@@ -164,10 +151,6 @@ fn view(state: &State) -> Element<'_, Message> {
     let height_slider = slider(24.0..=48.0, state.height, Message::HeightChanged)
         .width(200);
 
-    let border_label = text(format!("Border width: {:.1} px", state.border_width)).size(14);
-    let border_slider = slider(0.0..=4.0, state.border_width, Message::BorderWidthChanged)
-        .width(200);
-
     let resize_label = text(format!("Resize edge: {:.1} px", state.resize_edge)).size(14);
     let resize_slider = slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged)
         .width(200);
@@ -188,7 +171,6 @@ fn view(state: &State) -> Element<'_, Message> {
         text("Change options below; titlebar updates live.").size(14),
         row![title_label, title_input].spacing(8).align_y(Alignment::Center),
         row![height_label, height_slider].spacing(8).align_y(Alignment::Center),
-        row![border_label, border_slider].spacing(8).align_y(Alignment::Center),
         row![resize_label, resize_slider].spacing(8).align_y(Alignment::Center),
         row![
             text("Title alignment:").size(14),
@@ -208,11 +190,7 @@ fn view(state: &State) -> Element<'_, Message> {
     .width(Length::Fill)
     .align_x(Alignment::Start);
 
-    let style = {
-        let mut s = titlebar_style_for(state.style_preset);
-        s.title_alignment = state.title_alignment;
-        s
-    };
+    let style = titlebar_style_for(state.style_preset);
 
     let title_str = if state.title.is_empty() {
         "Custom Titlebar Demo"
@@ -223,7 +201,6 @@ fn view(state: &State) -> Element<'_, Message> {
     let with_handles: Element<'_, Message> = titlebar(title_str)
         .on_message(Message::Titlebar)
         .height(state.height)
-        .border_width(state.border_width)
         .resize_edge(state.resize_edge)
         .title_alignment(state.title_alignment)
         .style(style)
