@@ -4,10 +4,14 @@
 //! The content area includes controls to change all titlebar options at runtime.
 
 use iced::widget::container;
-use iced::widget::{column, container as container_widget, pick_list, row, slider, text, text_input};
+use iced::widget::{
+    column, container as container_widget, pick_list, row, slider, text, text_input,
+};
 use iced::{Alignment, Color, Element, Length, Padding, Subscription, Task};
 
-use iced_custom_titlebar::{titlebar, TitlebarMessage, TitlebarStyle, TitleAlignment};
+use iced_custom_titlebar::{
+    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar,
+};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)
@@ -22,7 +26,7 @@ struct State {
     height: f32,
     resize_edge: f32,
     title_alignment: TitleAlignment,
-    style_preset: StylePreset,
+    style_preset: TitlebarStylePreset,
 }
 
 impl Default for State {
@@ -33,40 +37,7 @@ impl Default for State {
             height: 32.0,
             resize_edge: 1.0,
             title_alignment: TitleAlignment::default(),
-            style_preset: StylePreset::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum StylePreset {
-    #[default]
-    Dark,
-    Light,
-}
-
-impl std::fmt::Display for StylePreset {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            StylePreset::Dark => write!(f, "Dark"),
-            StylePreset::Light => write!(f, "Light"),
-        }
-    }
-}
-
-fn titlebar_style_for(preset: StylePreset) -> TitlebarStyle {
-    match preset {
-        StylePreset::Dark => TitlebarStyle {
-            bar: Color::from_rgb8(0, 0, 0),
-            button_hover: Color::from_rgb8(60, 60, 60),
-            close_hover: Color::from_rgb8(232, 17, 35),
-            icon: Color::from_rgb8(255, 255, 255),
-        },
-        StylePreset::Light => TitlebarStyle {
-            bar: Color::from_rgb8(240, 240, 240),
-            button_hover: Color::from_rgb8(220, 220, 220),
-            close_hover: Color::from_rgb8(232, 17, 35),
-            icon: Color::from_rgb8(40, 40, 40),
+            style_preset: TitlebarStylePreset::default(),
         }
     }
 }
@@ -80,7 +51,7 @@ enum Message {
     HeightChanged(f32),
     ResizeEdgeChanged(f32),
     TitleAlignmentChanged(TitleAlignment),
-    StylePresetChanged(StylePreset),
+    StylePresetChanged(TitlebarStylePreset),
 }
 
 fn subscription(_state: &State) -> Subscription<Message> {
@@ -98,9 +69,15 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
                 return Task::none();
             };
             match tb {
-                TitlebarMessage::StartDrag => iced::window::drag::<()>(window_id).discard::<Message>(),
-                TitlebarMessage::Minimize => iced::window::minimize::<()>(window_id, true).discard::<Message>(),
-                TitlebarMessage::ToggleMaximize => iced::window::toggle_maximize::<()>(window_id).discard::<Message>(),
+                TitlebarMessage::StartDrag => {
+                    iced::window::drag::<()>(window_id).discard::<Message>()
+                }
+                TitlebarMessage::Minimize => {
+                    iced::window::minimize::<()>(window_id, true).discard::<Message>()
+                }
+                TitlebarMessage::ToggleMaximize => {
+                    iced::window::toggle_maximize::<()>(window_id).discard::<Message>()
+                }
                 TitlebarMessage::Close => iced::window::close::<()>(window_id).discard::<Message>(),
             }
         }
@@ -126,8 +103,8 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.title_alignment = a;
             Task::none()
         }
-        Message::StylePresetChanged(p) => {
-            state.style_preset = p;
+        Message::StylePresetChanged(preset) => {
+            state.style_preset = preset;
             Task::none()
         }
     }
@@ -140,14 +117,17 @@ fn view(state: &State) -> Element<'_, Message> {
         .width(250);
 
     let height_label = text(format!("Height: {:.0} px", state.height)).size(14);
-    let height_slider = slider(24.0..=48.0, state.height, Message::HeightChanged)
-        .width(200);
+    let height_slider = slider(24.0..=48.0, state.height, Message::HeightChanged).width(200);
 
     let resize_label = text(format!("Resize edge: {:.1} px", state.resize_edge)).size(14);
-    let resize_slider = slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged)
-        .width(200);
+    let resize_slider =
+        slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged).width(200);
 
-    let alignment_options = [TitleAlignment::Left, TitleAlignment::Center, TitleAlignment::Right];
+    let alignment_options = [
+        TitleAlignment::Left,
+        TitleAlignment::Center,
+        TitleAlignment::Right,
+    ];
     let alignment_pick = pick_list(
         alignment_options,
         Some(state.title_alignment),
@@ -155,34 +135,38 @@ fn view(state: &State) -> Element<'_, Message> {
     )
     .width(120);
 
-    let style_options = [StylePreset::Dark, StylePreset::Light];
-    let style_pick = pick_list(style_options, Some(state.style_preset), Message::StylePresetChanged)
-        .width(120);
+    let style_options = [TitlebarStylePreset::Dark, TitlebarStylePreset::Light];
+    let style_pick = pick_list(
+        style_options,
+        Some(state.style_preset),
+        Message::StylePresetChanged,
+    )
+    .width(120);
 
     let config_panel = column![
         text("Change options below; titlebar updates live.").size(14),
-        row![title_label, title_input].spacing(8).align_y(Alignment::Center),
-        row![height_label, height_slider].spacing(8).align_y(Alignment::Center),
-        row![resize_label, resize_slider].spacing(8).align_y(Alignment::Center),
-        row![
-            text("Title alignment:").size(14),
-            alignment_pick,
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
-        row![
-            text("Style preset:").size(14),
-            style_pick,
-        ]
-        .spacing(8)
-        .align_y(Alignment::Center),
+        row![title_label, title_input]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![height_label, height_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![resize_label, resize_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![text("Title alignment:").size(14), alignment_pick,]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![text("Style preset:").size(14), style_pick,]
+            .spacing(8)
+            .align_y(Alignment::Center),
     ]
     .spacing(12)
     .padding(Padding::from(20))
     .width(Length::Fill)
     .align_x(Alignment::Start);
 
-    let style = titlebar_style_for(state.style_preset);
+    let style = TitlebarStyle::from(state.style_preset);
 
     let title_str = if state.title.is_empty() {
         "Custom Titlebar Demo"

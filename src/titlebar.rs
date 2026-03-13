@@ -5,9 +5,9 @@
 
 use crate::style::{self, TitleAlignment};
 use iced::mouse::Interaction;
+use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, column, container, mouse_area, row, svg, text};
 use iced::{Alignment, Element, Length};
-use iced::widget::svg::Handle as SvgHandle;
 
 /// Messages emitted by the custom titlebar widget.
 /// Map these in your app's update to the corresponding [iced::window] tasks.
@@ -130,7 +130,13 @@ where
         let to_message = value.on_message.expect(
             "titlebar: on_message must be set before converting to Element (e.g. titlebar(\"App\").on_message(Message::Titlebar).into())",
         );
-        build_titlebar_element(value.title, value.style, value.height, value.title_alignment, to_message)
+        build_titlebar_element(
+            value.title,
+            value.style,
+            value.height,
+            value.title_alignment,
+            to_message,
+        )
     }
 }
 
@@ -344,16 +350,48 @@ where
         .height(height)
     };
 
-    let nw = resize_region(iced::window::Direction::NorthWest, Length::Fixed(corner_size), Length::Fixed(corner_size));
-    let n = resize_region(iced::window::Direction::North, Length::Fill, Length::Fixed(edge_size));
-    let ne = resize_region(iced::window::Direction::NorthEast, Length::Fixed(corner_size), Length::Fixed(corner_size));
+    let nw = resize_region(
+        iced::window::Direction::NorthWest,
+        Length::Fixed(corner_size),
+        Length::Fixed(corner_size),
+    );
+    let n = resize_region(
+        iced::window::Direction::North,
+        Length::Fill,
+        Length::Fixed(edge_size),
+    );
+    let ne = resize_region(
+        iced::window::Direction::NorthEast,
+        Length::Fixed(corner_size),
+        Length::Fixed(corner_size),
+    );
 
-    let w = resize_region(iced::window::Direction::West, Length::Fixed(edge_size), Length::Fill);
-    let e = resize_region(iced::window::Direction::East, Length::Fixed(edge_size), Length::Fill);
+    let w = resize_region(
+        iced::window::Direction::West,
+        Length::Fixed(edge_size),
+        Length::Fill,
+    );
+    let e = resize_region(
+        iced::window::Direction::East,
+        Length::Fixed(edge_size),
+        Length::Fill,
+    );
 
-    let sw = resize_region(iced::window::Direction::SouthWest, Length::Fixed(corner_size), Length::Fixed(corner_size));
-    let s = resize_region(iced::window::Direction::South, Length::Fill, Length::Fixed(edge_size));
-    let se = resize_region(iced::window::Direction::SouthEast, Length::Fixed(corner_size), Length::Fixed(corner_size));
+    let sw = resize_region(
+        iced::window::Direction::SouthWest,
+        Length::Fixed(corner_size),
+        Length::Fixed(corner_size),
+    );
+    let s = resize_region(
+        iced::window::Direction::South,
+        Length::Fill,
+        Length::Fixed(edge_size),
+    );
+    let se = resize_region(
+        iced::window::Direction::SouthEast,
+        Length::Fixed(corner_size),
+        Length::Fixed(corner_size),
+    );
 
     let top_row = row![nw, n, ne].spacing(0);
     let mid_row = row![w, content.into(), e].spacing(0);

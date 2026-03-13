@@ -25,8 +25,8 @@
 pub mod style;
 pub mod titlebar;
 
-pub use style::{TitleAlignment, TitlebarStyle};
+pub use style::{TitleAlignment, TitlebarStyle, TitlebarStylePreset};
 pub use titlebar::{
-    resize_handles, titlebar, titlebar_with_style, Titlebar, TitlebarMessage,
-    DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE,
+    DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, Titlebar, TitlebarMessage,
+    resize_handles, titlebar, titlebar_with_style,
 };

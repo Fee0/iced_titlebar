@@ -48,19 +48,58 @@ pub struct TitlebarStyle {
 
 impl Default for TitlebarStyle {
     fn default() -> Self {
-        Self {
-            bar: Color::from_rgb8(0, 0, 0),
-            button_hover: Color::from_rgb8(60, 60, 60),
-            close_hover: Color::from_rgb8(232, 17, 35),
-            icon: Color::from_rgb8(240, 240, 240),
+        Self::preset(TitlebarStylePreset::Dark)
+    }
+}
+
+/// Built-in style variants for the titlebar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TitlebarStylePreset {
+    /// Dark titlebar (default).
+    #[default]
+    Dark,
+    /// Light titlebar.
+    Light,
+}
+
+impl std::fmt::Display for TitlebarStylePreset {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TitlebarStylePreset::Dark => write!(f, "Dark"),
+            TitlebarStylePreset::Light => write!(f, "Light"),
+        }
+    }
+}
+
+impl From<TitlebarStylePreset> for TitlebarStyle {
+    fn from(preset: TitlebarStylePreset) -> Self {
+        Self::preset(preset)
+    }
+}
+
+impl TitlebarStyle {
+    /// Returns the style for a built-in preset.
+    pub fn preset(preset: TitlebarStylePreset) -> Self {
+        match preset {
+            TitlebarStylePreset::Dark => TitlebarStyle {
+                bar: Color::from_rgb8(30, 30, 30),
+                button_hover: Color::from_rgb8(60, 60, 60),
+                close_hover: Color::from_rgb8(232, 17, 35),
+                icon: Color::from_rgb8(240, 240, 240),
+            },
+            TitlebarStylePreset::Light => TitlebarStyle {
+                bar: Color::from_rgb8(240, 240, 240),
+                button_hover: Color::from_rgb8(220, 220, 220),
+                close_hover: Color::from_rgb8(232, 17, 35),
+                icon: Color::from_rgb8(40, 40, 40),
+            },
         }
     }
 }
 
 /// Returns the container style for the titlebar (background only; no border).
 pub fn bar_container_style(style: &TitlebarStyle) -> container::Style {
-    container::Style::default()
-        .background(iced::Background::Color(style.bar))
+    container::Style::default().background(iced::Background::Color(style.bar))
 }
 
 /// Returns the button style for minimize and maximize: bar color by default, `button_hover` when hovered/pressed.
