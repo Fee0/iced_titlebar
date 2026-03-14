@@ -44,6 +44,8 @@ pub struct TitlebarStyle {
     pub close_hover: Color,
     /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
     pub icon: Color,
+    /// Color of the border around the app (the resize-edge / drag region). Use when styling the outer container that wraps the titlebar and content.
+    pub border: Color,
 }
 
 impl Default for TitlebarStyle {
@@ -86,12 +88,14 @@ impl TitlebarStyle {
                 button_hover: Color::from_rgb8(60, 60, 60),
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(255, 255, 255),
+                border: Color::from_rgb8(52, 53, 56),
             },
             TitlebarStylePreset::Light => TitlebarStyle {
                 bar: Color::from_rgb8(255, 255, 255),
                 button_hover: Color::from_rgb8(220, 220, 220),
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(0, 0, 0),
+                border: Color::from_rgb8(160, 160, 160),
             },
         }
     }

@@ -7,7 +7,7 @@ use iced::widget::container;
 use iced::widget::{
     column, container as container_widget, pick_list, row, slider, text, text_input,
 };
-use iced::{Alignment, Color, Element, Length, Padding, Subscription, Task};
+use iced::{Alignment, Element, Length, Padding, Subscription, Task};
 
 use iced_custom_titlebar::{
     TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar,
@@ -195,7 +195,7 @@ fn view(state: &State) -> Element<'_, Message> {
             container::Style::default().border(
                 iced::Border::default()
                     .width(border_width)
-                    .color(Color::from_rgb8(160, 160, 160)),
+                    .color(style.border),
             )
         })
         .into()
