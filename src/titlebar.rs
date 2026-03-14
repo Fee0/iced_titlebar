@@ -318,36 +318,30 @@ fn to_iced_alignment(a: TitleAlignment) -> Alignment {
 
 /// SVG handle for the minimize icon: a single horizontal line 10px wide (crisp 10×10 viewBox, 1px stroke).
 fn minimize_handle() -> SvgHandle {
-    const MINIMIZE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" stroke-width="1"/>
-</svg>"#;
-    SvgHandle::from_memory(MINIMIZE_SVG.as_bytes().to_vec())
+    SvgHandle::from_memory(
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/minimize.svg")).to_vec(),
+    )
 }
 
 /// SVG handle for the maximize icon: single square (expand to full screen). Shown when window is not maximized.
 fn maximize_handle() -> SvgHandle {
-    const MAXIMIZE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <rect x="0" y="0" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/>
-</svg>"#;
-    SvgHandle::from_memory(MAXIMIZE_SVG.as_bytes().to_vec())
+    SvgHandle::from_memory(
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/maximize.svg")).to_vec(),
+    )
 }
 
 /// SVG handle for the restore icon: two overlapping squares (restore down). Shown when window is maximized.
 fn restore_handle() -> SvgHandle {
-    const RESTORE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <rect x="2" y="2" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-  <rect x="3" y="3" width="5" height="5" fill="none" stroke="currentColor" stroke-width="1"/>
-</svg>"#;
-    SvgHandle::from_memory(RESTORE_SVG.as_bytes().to_vec())
+    SvgHandle::from_memory(
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/restore.svg")).to_vec(),
+    )
 }
 
 /// SVG handle for the close icon: an X (crisp 10×10, 1px stroke, butt caps to match reference).
 fn close_handle() -> SvgHandle {
-    const CLOSE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <line x1="0.0" y1="0.0" x2="10.0" y2="10.0" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
-  <line x1="10.0" y1="0.0" x2="0.0" y2="10.0" stroke="currentColor" stroke-width="1" stroke-linecap="butt"/>
-</svg>"#;
-    SvgHandle::from_memory(CLOSE_SVG.as_bytes().to_vec())
+    SvgHandle::from_memory(
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/close.svg")).to_vec(),
+    )
 }
 
 // ---------------------------------------------------------------------------
