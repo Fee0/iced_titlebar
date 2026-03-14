@@ -28,12 +28,13 @@ impl std::fmt::Display for TitleAlignment {
     }
 }
 
-/// Style for the titlebar and its buttons: bar and button hover colors, icon color.
+/// Style for the titlebar and its buttons: bar and button hover colors, icon color, title font color.
 ///
 /// - `bar`: Background of the whole titlebar and default background of all three buttons.
 /// - `button_hover`: Hover/pressed background for minimize and maximize buttons.
 /// - `close_hover`: Hover/pressed background for the close button (typically red).
 /// - `icon`: Color used for the SVG window-control icons (minimize, maximize, close) and any button text. SVGs use `currentColor` so they inherit this.
+/// - `font_color`: Color of the title text in the draggable area.
 #[derive(Debug, Clone, Copy)]
 pub struct TitlebarStyle {
     /// Background color for the titlebar and for all buttons in their default state.
@@ -46,6 +47,8 @@ pub struct TitlebarStyle {
     pub icon: Color,
     /// Color of the border around the app (the resize-edge / drag region). Use when styling the outer container that wraps the titlebar and content.
     pub border: Color,
+    /// Color of the title text in the draggable area.
+    pub font_color: Color,
 }
 
 impl Default for TitlebarStyle {
@@ -89,6 +92,7 @@ impl TitlebarStyle {
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(255, 255, 255),
                 border: Color::from_rgb8(52, 53, 56),
+                font_color: Color::from_rgb8(255, 255, 255),
             },
             TitlebarStylePreset::Light => TitlebarStyle {
                 bar: Color::from_rgb8(255, 255, 255),
@@ -96,6 +100,7 @@ impl TitlebarStyle {
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(0, 0, 0),
                 border: Color::from_rgb8(160, 160, 160),
+                font_color: Color::from_rgb8(0, 0, 0),
             },
         }
     }

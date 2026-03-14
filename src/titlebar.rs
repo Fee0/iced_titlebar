@@ -199,7 +199,7 @@ where
 
     let draggable = container(
         mouse_area(
-            container(text(title_str).size(14))
+            container(text(title_str).size(14).color(style.font_color))
                 .padding(iced::Padding::from([8, 12]))
                 .width(Length::Fill)
                 .height(Length::Fill)
