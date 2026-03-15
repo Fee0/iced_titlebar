@@ -164,7 +164,7 @@ where
 {
     /// Builds a layout with this titlebar on top of `content`, wrapped in resize handles.
     ///
-    /// The resize edge thickness is taken from [resize_edge](Titlebar::resize_edge) if set,
+    /// The returned element includes the outer border (using the titlebar style's border color and the same thickness as the resize edge). The resize edge thickness is taken from [resize_edge](Titlebar::resize_edge) if set,
     /// otherwise it falls back to [RESIZE_EDGE_SIZE].
     pub fn with_content(
         self,
@@ -172,6 +172,7 @@ where
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
     ) -> Element<'a, Message> {
         let edge = self.resize_edge_size.unwrap_or(RESIZE_EDGE_SIZE);
+        let style = self.style;
         let bar: Element<'a, Message> = self.into();
 
         let inner = column![bar, content.into()]
@@ -179,7 +180,18 @@ where
             .width(Length::Fill)
             .height(Length::Fill);
 
-        resize_handles_with_sizes(inner, to_resize, edge, edge)
+        let with_handles = resize_handles_with_sizes(inner, to_resize, edge, edge);
+        container(with_handles)
+            .style(move |_theme| {
+                iced::widget::container::Style::default().border(
+                    iced::Border::default()
+                        .width(edge)
+                        .color(style.border),
+                )
+            })
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
     }
 }
 

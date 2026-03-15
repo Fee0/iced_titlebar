@@ -3,7 +3,6 @@
 //!
 //! The content area includes controls to change all titlebar options at runtime.
 
-use iced::widget::container;
 use iced::widget::{
     column, container as container_widget, pick_list, row, slider, text, text_input,
 };
@@ -177,8 +176,6 @@ fn view(state: &State) -> Element<'_, Message> {
         state.title.as_str()
     };
 
-    let border_width = state.resize_edge;
-
     let with_handles: Element<'_, Message> = titlebar(title_str)
         .on_message(Message::Titlebar)
         .height(state.height)
@@ -191,12 +188,5 @@ fn view(state: &State) -> Element<'_, Message> {
     container_widget(with_handles)
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(move |_theme| {
-            container::Style::default().border(
-                iced::Border::default()
-                    .width(border_width)
-                    .color(style.border),
-            )
-        })
         .into()
 }
