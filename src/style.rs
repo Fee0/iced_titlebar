@@ -45,7 +45,7 @@ pub struct TitlebarStyle {
     pub close_hover: Color,
     /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
     pub icon: Color,
-    /// Color of the border around the app (the resize-edge / drag region). The titlebar draws this border when using [Titlebar::with_content](crate::windows::Titlebar::with_content).
+    /// Color of the border around the app (the resize-edge / drag region). The titlebar draws this border when using [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content) or [TitleBarMac::with_content](crate::mac::TitleBarMac::with_content).
     pub border: Color,
     /// Color of the title text in the draggable area.
     pub font_color: Color,

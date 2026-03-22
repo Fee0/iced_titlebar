@@ -1,7 +1,7 @@
 //! Example: macOS-style traffic lights titlebar with decorations disabled.
-//! Run with: cargo run --example traffic_lights_titlebar
+//! Run with: cargo run --example mac
 //!
-//! The content area includes controls to change titlebar options at runtime (same idea as `custom_titlebar`).
+//! The content area includes controls to change titlebar options at runtime (same idea as the `windows` example).
 
 use iced::widget::{
     column, container as container_widget, pick_list, row, slider, text, text_input,
@@ -9,7 +9,7 @@ use iced::widget::{
 use iced::{Alignment, Element, Length, Padding, Subscription, Task};
 
 use iced_custom_titlebar::{
-    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, traffic_lights_titlebar,
+    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_mac,
 };
 
 fn main() -> iced::Result {
@@ -212,7 +212,7 @@ fn view(state: &State) -> Element<'_, Message> {
         state.title.as_str()
     };
 
-    let with_handles: Element<'_, Message> = traffic_lights_titlebar(title_str)
+    let with_handles: Element<'_, Message> = titlebar_mac(title_str)
         .on_message(Message::Titlebar)
         .height(state.height)
         .resize_edge(state.resize_edge)

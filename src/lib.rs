@@ -4,13 +4,13 @@
 //! to draw your own titlebar with drag, minimize, maximize, and close — using iced's built-in
 //! [window](https://docs.rs/iced/latest/iced/window/) APIs under the hood.
 //!
-//! # Example
+//! # Example (Windows-style chrome)
 //!
 //! ```ignore
-//! use iced_custom_titlebar::{titlebar, TitlebarMessage};
+//! use iced_custom_titlebar::{titlebar_windows, TitlebarMessage};
 //!
 //! // In your view (builder style, like other iced widgets). Pass current maximized state so the middle button shows the correct icon:
-//! let bar = titlebar("My App").maximized(is_maximized).on_message(Message::Titlebar).into();
+//! let bar = titlebar_windows("My App").maximized(is_maximized).on_message(Message::Titlebar).into();
 //!
 //! // In your update (with window_id from state, e.g. stored from window::open_events()):
 //! Message::Titlebar(TitlebarMessage::StartDrag) => window::drag(window_id),
@@ -19,12 +19,12 @@
 //! Message::Titlebar(TitlebarMessage::Close) => window::close(window_id),
 //! ```
 //!
-//! # Traffic lights (macOS-style) titlebar
+//! # macOS-style (traffic lights) titlebar
 //!
 //! ```ignore
-//! use iced_custom_titlebar::{traffic_lights_titlebar, TitlebarMessage};
+//! use iced_custom_titlebar::{titlebar_mac, TitlebarMessage};
 //!
-//! let bar = traffic_lights_titlebar("My App")
+//! let bar = titlebar_mac("My App")
 //!     .maximized(is_maximized)
 //!     .light_diameter(18.0)
 //!     .icon_spacing(8.0)
@@ -45,8 +45,11 @@ pub use common::{
     DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, TitlebarMessage, resize_handles,
 };
 pub use mac::{
-    TRAFFIC_LIGHT_DIAMETER, TRAFFIC_LIGHT_HIT, TRAFFIC_LIGHT_SPACING, TRAFFIC_LIGHTS_LEFT_PADDING,
-    TrafficLightsTitlebar, default_traffic_light_hit, traffic_lights_titlebar,
+    default_titlebar_mac_light_hit, titlebar_mac, titlebar_mac_with_style, TitleBarMac,
+    TITLEBAR_MAC_LIGHTS_LEFT_PADDING, TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT,
+    TITLEBAR_MAC_LIGHT_SPACING,
 };
 pub use style::{TitleAlignment, TitlebarStyle, TitlebarStylePreset};
-pub use windows::{titlebar, titlebar_with_style, Titlebar, DEFAULT_ICON_WIDTH};
+pub use windows::{
+    titlebar_windows, titlebar_windows_with_style, TitleBarWindows, TITLEBAR_WINDOWS_CONTROL_WIDTH,
+};

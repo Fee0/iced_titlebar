@@ -1,5 +1,5 @@
 //! Example: custom titlebar with decorations disabled.
-//! Run with: cargo run --example custom_titlebar
+//! Run with: cargo run --example windows
 //!
 //! The content area includes controls to change all titlebar options at runtime.
 
@@ -9,7 +9,7 @@ use iced::widget::{
 use iced::{Alignment, Element, Length, Padding, Subscription, Task};
 
 use iced_custom_titlebar::{
-    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar,
+    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows,
 };
 
 fn main() -> iced::Result {
@@ -194,7 +194,7 @@ fn view(state: &State) -> Element<'_, Message> {
         state.title.as_str()
     };
 
-    let with_handles: Element<'_, Message> = titlebar(title_str)
+    let with_handles: Element<'_, Message> = titlebar_windows(title_str)
         .on_message(Message::Titlebar)
         .height(state.height)
         .resize_edge(state.resize_edge)

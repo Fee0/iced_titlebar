@@ -1,7 +1,7 @@
 //! macOS-style traffic lights titlebar (close, minimize, zoom) for iced with decorations disabled.
 //!
-//! Uses embedded SVG assets under `svg/macos/`. Built with [traffic_lights_titlebar] and
-//! [TrafficLightsTitlebar::on_message], emitting the same [TitlebarMessage](crate::common::TitlebarMessage) as the Windows-style bar.
+//! Uses embedded SVG assets under `svg/macos/`. Built with [titlebar_mac] and
+//! [TitleBarMac::on_message], emitting the same [TitlebarMessage](crate::common::TitlebarMessage) as the Windows-style bar.
 
 use crate::common::{
     draggable_title_area, surround_with_resize_edges, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT,
@@ -13,27 +13,27 @@ use iced::widget::{button, container, row, svg};
 use iced::{Alignment, Element, Length};
 
 /// Diameter of each traffic light circle in logical pixels (SVG viewBox scales to this).
-pub const TRAFFIC_LIGHT_DIAMETER: f32 = 18.0;
+pub const TITLEBAR_MAC_LIGHT_DIAMETER: f32 = 18.0;
 
 /// Horizontal gap between traffic light circles.
-pub const TRAFFIC_LIGHT_SPACING: f32 = 8.0;
+pub const TITLEBAR_MAC_LIGHT_SPACING: f32 = 8.0;
 
 /// Left padding before the first traffic light.
-pub const TRAFFIC_LIGHTS_LEFT_PADDING: f32 = 10.0;
+pub const TITLEBAR_MAC_LIGHTS_LEFT_PADDING: f32 = 10.0;
 
-/// Default hit-target size when using [TrafficLightsTitlebar::light_diameter] / [default_traffic_light_hit].
-pub const TRAFFIC_LIGHT_HIT: f32 = 36.0;
+/// Default hit-target size when using [TitleBarMac::light_diameter] / [default_titlebar_mac_light_hit].
+pub const TITLEBAR_MAC_LIGHT_HIT: f32 = 36.0;
 
 /// Suggested button hit size for a given icon diameter (about 2× the glyph, minimum 24px).
 #[must_use]
-pub fn default_traffic_light_hit(light_diameter: f32) -> f32 {
+pub fn default_titlebar_mac_light_hit(light_diameter: f32) -> f32 {
     (light_diameter * 2.0).max(24.0)
 }
 
 /// macOS-style titlebar: traffic lights on the left, draggable title filling the rest.
 ///
-/// Build with [traffic_lights_titlebar], chain options, then [.into()](Into::into) after [on_message](TrafficLightsTitlebar::on_message).
-pub struct TrafficLightsTitlebar<'a, Message> {
+/// Build with [titlebar_mac], chain options, then [.into()](Into::into) after [on_message](TitleBarMac::on_message).
+pub struct TitleBarMac<'a, Message> {
     pub title: String,
     pub style: style::TitlebarStyle,
     pub height: f32,
@@ -47,9 +47,9 @@ pub struct TrafficLightsTitlebar<'a, Message> {
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
 }
 
-impl<'a, Message> std::fmt::Debug for TrafficLightsTitlebar<'a, Message> {
+impl<'a, Message> std::fmt::Debug for TitleBarMac<'a, Message> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TrafficLightsTitlebar")
+        f.debug_struct("TitleBarMac")
             .field("title", &self.title)
             .field("style", &self.style)
             .field("height", &self.height)
@@ -63,27 +63,27 @@ impl<'a, Message> std::fmt::Debug for TrafficLightsTitlebar<'a, Message> {
     }
 }
 
-/// Creates a [TrafficLightsTitlebar] with defaults. Call [TrafficLightsTitlebar::on_message] then [.into()](Into::into).
-pub fn traffic_lights_titlebar<Message>(title: impl ToString) -> TrafficLightsTitlebar<'static, Message> {
-    TrafficLightsTitlebar {
+/// Creates a [TitleBarMac] with defaults. Call [TitleBarMac::on_message] then [.into()](Into::into).
+pub fn titlebar_mac<Message>(title: impl ToString) -> TitleBarMac<'static, Message> {
+    TitleBarMac {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
         height: DEFAULT_TITLEBAR_HEIGHT,
         title_alignment: TitleAlignment::default(),
         is_maximized: false,
-        light_diameter: TRAFFIC_LIGHT_DIAMETER,
-        icon_spacing: TRAFFIC_LIGHT_SPACING,
+        light_diameter: TITLEBAR_MAC_LIGHT_DIAMETER,
+        icon_spacing: TITLEBAR_MAC_LIGHT_SPACING,
         resize_edge_size: None,
         on_message: None,
     }
 }
 
-impl<'a, Message> TrafficLightsTitlebar<'a, Message> {
-    pub fn on_message<'b, F>(self, f: F) -> TrafficLightsTitlebar<'b, Message>
+impl<'a, Message> TitleBarMac<'a, Message> {
+    pub fn on_message<'b, F>(self, f: F) -> TitleBarMac<'b, Message>
     where
         F: Fn(TitlebarMessage) -> Message + 'b,
     {
-        TrafficLightsTitlebar {
+        TitleBarMac {
             title: self.title,
             style: self.style,
             height: self.height,
@@ -121,7 +121,7 @@ impl<'a, Message> TrafficLightsTitlebar<'a, Message> {
         self
     }
 
-    /// Sets the diameter of each traffic light icon in logical pixels (hit target scales with [default_traffic_light_hit]).
+    /// Sets the diameter of each traffic light icon in logical pixels (hit target scales with [default_titlebar_mac_light_hit]).
     pub fn light_diameter(mut self, diameter: f32) -> Self {
         self.light_diameter = diameter.clamp(4.0, 64.0);
         self
@@ -134,15 +134,15 @@ impl<'a, Message> TrafficLightsTitlebar<'a, Message> {
     }
 }
 
-impl<'a, Message> From<TrafficLightsTitlebar<'a, Message>> for Element<'a, Message>
+impl<'a, Message> From<TitleBarMac<'a, Message>> for Element<'a, Message>
 where
     Message: Clone + 'a + 'static,
 {
-    fn from(value: TrafficLightsTitlebar<'a, Message>) -> Self {
+    fn from(value: TitleBarMac<'a, Message>) -> Self {
         let on_message = value.on_message.expect(
-            "traffic_lights_titlebar: on_message must be set before converting to Element",
+            "titlebar_mac: on_message must be set before converting to Element",
         );
-        build_traffic_lights_titlebar_element(
+        build_titlebar_mac_element(
             value.title,
             value.style,
             value.height,
@@ -155,11 +155,11 @@ where
     }
 }
 
-impl<'a, Message> TrafficLightsTitlebar<'a, Message>
+impl<'a, Message> TitleBarMac<'a, Message>
 where
     Message: Clone + 'a + 'static,
 {
-    /// Titlebar on top of `content`, wrapped in resize handles (same behavior as [crate::Titlebar::with_content](crate::Titlebar::with_content)).
+    /// Titlebar on top of `content`, wrapped in resize handles (same behavior as [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content)).
     pub fn with_content(
         self,
         content: impl Into<Element<'a, Message>>,
@@ -178,7 +178,34 @@ where
     }
 }
 
-fn build_traffic_lights_titlebar_element<'a, Message>(
+/// Builds a custom titlebar with the given style (convenience wrapper around the builder).
+///
+/// Prefer the builder form: `titlebar_mac(title).style(style).maximized(is_maximized).light_diameter(d).on_message(to_message).into()`.
+pub fn titlebar_mac_with_style<'a, Message>(
+    title: impl ToString,
+    to_message: impl Fn(TitlebarMessage) -> Message + 'a,
+    style: style::TitlebarStyle,
+    title_alignment: TitleAlignment,
+    is_maximized: bool,
+    icon_spacing: f32,
+    light_diameter: f32,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a + 'static,
+{
+    build_titlebar_mac_element(
+        title.to_string(),
+        style,
+        DEFAULT_TITLEBAR_HEIGHT,
+        title_alignment,
+        is_maximized,
+        light_diameter.clamp(4.0, 64.0),
+        icon_spacing.clamp(0.0, 64.0),
+        Box::new(to_message),
+    )
+}
+
+fn build_titlebar_mac_element<'a, Message>(
     title_str: String,
     style: style::TitlebarStyle,
     height: f32,
@@ -194,7 +221,7 @@ where
     let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
 
     let d = light_diameter;
-    let hit = default_traffic_light_hit(light_diameter);
+    let hit = default_titlebar_mac_light_hit(light_diameter);
     let s_close = style;
     let s_min = style;
     let s_max = style;
@@ -232,7 +259,7 @@ where
         .height(Length::Fill);
 
     let lights_block = container(lights_row)
-        .padding(iced::Padding::default().left(TRAFFIC_LIGHTS_LEFT_PADDING))
+        .padding(iced::Padding::default().left(TITLEBAR_MAC_LIGHTS_LEFT_PADDING))
         .height(Length::Fill)
         .align_y(Alignment::Center);
 

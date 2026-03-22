@@ -183,8 +183,8 @@ where
 ///
 /// Map each handle’s message to `window::drag_resize(window_id, direction)`.
 ///
-/// For a titlebar + content layout with configurable edge size, use [crate::windows::Titlebar::with_content]
-/// or [crate::mac::TrafficLightsTitlebar::with_content].
+/// For a titlebar + content layout with configurable edge size, use [crate::windows::TitleBarWindows::with_content]
+/// or [crate::mac::TitleBarMac::with_content].
 pub fn resize_handles<'a, Message>(
     content: impl Into<Element<'a, Message>>,
     to_message: impl Fn(iced::window::Direction) -> Message + 'a,

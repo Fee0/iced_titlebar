@@ -14,16 +14,17 @@ use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, container, row, svg};
 use iced::{Alignment, Element, Length};
 
-pub const DEFAULT_ICON_WIDTH: f32 = 45.0;
+/// Default width in logical pixels for each minimize / maximize / close button hit target.
+pub const TITLEBAR_WINDOWS_CONTROL_WIDTH: f32 = 45.0;
 
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
-/// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height),
-/// [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge), [maximized](Titlebar::maximized), [icon_spacing](Titlebar::icon_spacing). Call [.into()](Into::into) to get an `Element`,
-/// or [with_content](Titlebar::with_content) to stack the bar with content and wrap everything in resize handles.
-/// You must call [on_message](Titlebar::on_message) for the bar to be interactive.
-/// Pass the current window maximized state via [maximized](Titlebar::maximized) so the middle button shows the correct icon (maximize vs restore).
-pub struct Titlebar<'a, Message> {
+/// Build with [titlebar_windows](titlebar_windows)(title), then chain [on_message](TitleBarWindows::on_message), [style](TitleBarWindows::style), [height](TitleBarWindows::height),
+/// [title_alignment](TitleBarWindows::title_alignment), [resize_edge](TitleBarWindows::resize_edge), [maximized](TitleBarWindows::maximized), [icon_spacing](TitleBarWindows::icon_spacing). Call [.into()](Into::into) to get an `Element`,
+/// or [with_content](TitleBarWindows::with_content) to stack the bar with content and wrap everything in resize handles.
+/// You must call [on_message](TitleBarWindows::on_message) for the bar to be interactive.
+/// Pass the current window maximized state via [maximized](TitleBarWindows::maximized) so the middle button shows the correct icon (maximize vs restore).
+pub struct TitleBarWindows<'a, Message> {
     /// Title text shown in the draggable area.
     pub title: String,
     /// Visual style (bar/button colors, icon color).
@@ -44,9 +45,9 @@ pub struct Titlebar<'a, Message> {
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
 }
 
-impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
+impl<'a, Message> std::fmt::Debug for TitleBarWindows<'a, Message> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Titlebar")
+        f.debug_struct("TitleBarWindows")
             .field("title", &self.title)
             .field("style", &self.style)
             .field("height", &self.height)
@@ -58,19 +59,19 @@ impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
     }
 }
 
-/// Creates a new [Titlebar] with the given title and default style/height. Call [.on_message()](Titlebar::on_message) and then [.into()](Into::into) to build the element.
+/// Creates a new [TitleBarWindows] with the given title and default style/height. Call [.on_message()](TitleBarWindows::on_message) and then [.into()](Into::into) to build the element.
 ///
 /// # Example
 ///
 /// ```
-/// # use iced_custom_titlebar::{titlebar, TitlebarMessage};
+/// # use iced_custom_titlebar::{titlebar_windows, TitlebarMessage};
 /// # use iced::Element;
 /// # #[derive(Clone)]
 /// # enum Message { Titlebar(TitlebarMessage) }
-/// let _bar: Element<'_, Message> = titlebar("My App").on_message(Message::Titlebar).into();
+/// let _bar: Element<'_, Message> = titlebar_windows("My App").on_message(Message::Titlebar).into();
 /// ```
-pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
-    Titlebar {
+pub fn titlebar_windows<Message>(title: impl ToString) -> TitleBarWindows<'static, Message> {
+    TitleBarWindows {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
         height: DEFAULT_TITLEBAR_HEIGHT,
@@ -82,13 +83,13 @@ pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
     }
 }
 
-impl<'a, Message> Titlebar<'a, Message> {
+impl<'a, Message> TitleBarWindows<'a, Message> {
     /// Sets the callback that maps [TitlebarMessage] to your app's `Message`. Required for drag/button interaction.
-    pub fn on_message<'b, F>(self, f: F) -> Titlebar<'b, Message>
+    pub fn on_message<'b, F>(self, f: F) -> TitleBarWindows<'b, Message>
     where
         F: Fn(TitlebarMessage) -> Message + 'b,
     {
-        Titlebar {
+        TitleBarWindows {
             title: self.title,
             style: self.style,
             height: self.height,
@@ -113,7 +114,7 @@ impl<'a, Message> Titlebar<'a, Message> {
     }
 
     /// Sets the resize edge/corner thickness (in pixels) for integrated resize handles.
-    /// Used by [with_content](Titlebar::with_content) when wrapping content in resize handles.
+    /// Used by [with_content](TitleBarWindows::with_content) when wrapping content in resize handles.
     pub fn resize_edge(mut self, size: f32) -> Self {
         self.resize_edge_size = Some(size.max(0.0));
         self
@@ -139,15 +140,15 @@ impl<'a, Message> Titlebar<'a, Message> {
     }
 }
 
-impl<'a, Message> From<Titlebar<'a, Message>> for Element<'a, Message>
+impl<'a, Message> From<TitleBarWindows<'a, Message>> for Element<'a, Message>
 where
     Message: Clone + 'a + 'static,
 {
-    fn from(value: Titlebar<'a, Message>) -> Self {
+    fn from(value: TitleBarWindows<'a, Message>) -> Self {
         let to_message = value.on_message.expect(
-            "titlebar: on_message must be set before converting to Element (e.g. titlebar(\"App\").on_message(Message::Titlebar).into())",
+            "titlebar_windows: on_message must be set before converting to Element (e.g. titlebar_windows(\"App\").on_message(Message::Titlebar).into())",
         );
-        build_titlebar_element(
+        build_titlebar_windows_element(
             value.title,
             value.style,
             value.height,
@@ -159,13 +160,13 @@ where
     }
 }
 
-impl<'a, Message> Titlebar<'a, Message>
+impl<'a, Message> TitleBarWindows<'a, Message>
 where
     Message: Clone + 'a + 'static,
 {
     /// Builds a layout with this titlebar on top of `content`, wrapped in resize handles.
     ///
-    /// The returned element includes the outer border (using the titlebar style's border color and the same thickness as the resize edge). The resize edge thickness is taken from [resize_edge](Titlebar::resize_edge) if set,
+    /// The returned element includes the outer border (using the titlebar style's border color and the same thickness as the resize edge). The resize edge thickness is taken from [resize_edge](TitleBarWindows::resize_edge) if set,
     /// otherwise it falls back to [RESIZE_EDGE_SIZE].
     pub fn with_content(
         self,
@@ -185,8 +186,8 @@ where
     }
 }
 
-/// Builds a custom titlebar element. Used by [From] and [titlebar_with_style].
-fn build_titlebar_element<'a, Message>(
+/// Builds a custom titlebar element. Used by [From] and [titlebar_windows_with_style].
+fn build_titlebar_windows_element<'a, Message>(
     title_str: String,
     style: style::TitlebarStyle,
     height: f32,
@@ -250,19 +251,19 @@ where
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
         .style(move |theme, status| style::min_max_button_style(&s_min, theme, status))
-        .width(DEFAULT_ICON_WIDTH)
+        .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
     let max_btn = button(max_icon)
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
         .style(move |theme, status| style::min_max_button_style(&s_max, theme, status))
-        .width(DEFAULT_ICON_WIDTH)
+        .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
     let close_btn = button(close_icon)
         .on_press(to_message(TitlebarMessage::Close))
         .style(move |theme, status| style::close_button_style(&s_close, theme, status))
-        .width(DEFAULT_ICON_WIDTH)
+        .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
     let controls = row![min_btn, max_btn, close_btn]
@@ -284,8 +285,8 @@ where
 
 /// Builds a custom titlebar with the given style (convenience wrapper around the builder).
 ///
-/// Prefer the builder form: `titlebar(title).style(style).maximized(is_maximized).on_message(to_message).into()`.
-pub fn titlebar_with_style<'a, Message>(
+/// Prefer the builder form: `titlebar_windows(title).style(style).maximized(is_maximized).on_message(to_message).into()`.
+pub fn titlebar_windows_with_style<'a, Message>(
     title: impl ToString,
     to_message: impl Fn(TitlebarMessage) -> Message + 'a,
     style: style::TitlebarStyle,
@@ -296,7 +297,7 @@ pub fn titlebar_with_style<'a, Message>(
 where
     Message: Clone + 'a + 'static,
 {
-    build_titlebar_element(
+    build_titlebar_windows_element(
         title.to_string(),
         style,
         DEFAULT_TITLEBAR_HEIGHT,
