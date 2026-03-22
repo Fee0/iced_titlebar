@@ -192,20 +192,17 @@ where
     let s_close = style;
     let s_bar = style;
 
-    let icon_padding = iced::Padding {
-        top: 4.0,
-        right: 0.0,
-        bottom: 0.0,
-        left: 0.0,
-    };
-
-    let min_icon = container(svg(minimize_handle()).width(10).height(10).style(
-        move |_theme, _status| svg::Style {
-            color: Some(s_min.icon),
-        },
-    ))
-    .padding(icon_padding)
-    .align_x(Horizontal::Center);
+    let min_icon = container(
+        svg(minimize_handle()).width(10).height(10).style(
+            move |_theme, _status| svg::Style {
+                color: Some(s_min.icon),
+            },
+        ),
+    )
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .align_x(Horizontal::Center)
+    .align_y(Alignment::Center);
 
     let max_handle = if is_maximized {
         restore_handle()
@@ -220,16 +217,22 @@ where
                 color: Some(s_max.icon),
             }),
     )
-    .padding(icon_padding)
-    .align_x(Horizontal::Center);
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .align_x(Horizontal::Center)
+    .align_y(Alignment::Center);
 
-    let close_icon = container(svg(close_handle()).width(10).height(10).style(
-        move |_theme, _status| svg::Style {
-            color: Some(s_close.icon),
-        },
-    ))
-    .padding(icon_padding)
-    .align_x(Horizontal::Center);
+    let close_icon = container(
+        svg(close_handle()).width(10).height(10).style(
+            move |_theme, _status| svg::Style {
+                color: Some(s_close.icon),
+            },
+        ),
+    )
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .align_x(Horizontal::Center)
+    .align_y(Alignment::Center);
 
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))

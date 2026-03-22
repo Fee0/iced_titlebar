@@ -215,10 +215,12 @@ where
 
     let lights_row = row![close_btn, min_btn, max_btn]
         .spacing(TRAFFIC_LIGHT_SPACING)
-        .align_y(Alignment::Center);
+        .align_y(Alignment::Center)
+        .height(Length::Fill);
 
     let lights_block = container(lights_row)
         .padding(iced::Padding::default().left(TRAFFIC_LIGHTS_LEFT_PADDING))
+        .height(Length::Fill)
         .align_y(Alignment::Center);
 
     let bar_row = row![lights_block, draggable]
