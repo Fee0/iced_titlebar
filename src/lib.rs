@@ -19,14 +19,33 @@
 //! Message::Titlebar(TitlebarMessage::Close) => window::close(window_id),
 //! ```
 //!
+//! # Traffic lights (macOS-style) titlebar
+//!
+//! ```ignore
+//! use iced_custom_titlebar::{traffic_lights_titlebar, TitlebarMessage};
+//!
+//! let bar = traffic_lights_titlebar("My App")
+//!     .maximized(is_maximized)
+//!     .light_diameter(18.0)
+//!     .on_message(Message::Titlebar)
+//!     .into();
+//! // Same TitlebarMessage mapping as above in `update`.
+//! ```
+//!
 //! For resizing by dragging edges and corners, wrap your content with [resize_handles] and handle
 //! the direction message with `window::drag_resize(window_id, direction)`.
 
+pub mod common;
+pub mod mac;
 pub mod style;
-pub mod titlebar;
+pub mod windows;
 
-pub use style::{TitleAlignment, TitlebarStyle, TitlebarStylePreset};
-pub use titlebar::{
-    DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, Titlebar, TitlebarMessage,
-    resize_handles, titlebar, titlebar_with_style,
+pub use common::{
+    DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, TitlebarMessage, resize_handles,
 };
+pub use mac::{
+    TRAFFIC_LIGHT_DIAMETER, TRAFFIC_LIGHT_HIT, TRAFFIC_LIGHT_SPACING, TRAFFIC_LIGHTS_LEFT_PADDING,
+    TrafficLightsTitlebar, default_traffic_light_hit, traffic_lights_titlebar,
+};
+pub use style::{TitleAlignment, TitlebarStyle, TitlebarStylePreset};
+pub use windows::{titlebar, titlebar_with_style, Titlebar, DEFAULT_ICON_WIDTH};

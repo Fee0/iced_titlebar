@@ -1,0 +1,211 @@
+//! Example: macOS-style traffic lights titlebar with decorations disabled.
+//! Run with: cargo run --example traffic_lights_titlebar
+//!
+//! The content area includes controls to change titlebar options at runtime (same idea as `custom_titlebar`).
+
+use iced::widget::{
+    column, container as container_widget, pick_list, row, slider, text, text_input,
+};
+use iced::{Alignment, Element, Length, Padding, Subscription, Task};
+
+use iced_custom_titlebar::{
+    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, traffic_lights_titlebar,
+};
+
+fn main() -> iced::Result {
+    iced::application(State::default, update, view)
+        .subscription(subscription)
+        .decorations(false)
+        .run()
+}
+
+struct State {
+    window_id: Option<iced::window::Id>,
+    title: String,
+    height: f32,
+    resize_edge: f32,
+    title_alignment: TitleAlignment,
+    style_preset: TitlebarStylePreset,
+    is_maximized: bool,
+    light_diameter: f32,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            window_id: None,
+            title: "Traffic lights titlebar demo".to_string(),
+            height: 32.0,
+            resize_edge: 1.0,
+            title_alignment: TitleAlignment::default(),
+            style_preset: TitlebarStylePreset::default(),
+            is_maximized: false,
+            light_diameter: 18.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+enum Message {
+    WindowOpened(iced::window::Id),
+    Titlebar(TitlebarMessage),
+    Resize(iced::window::Direction),
+    TitleChanged(String),
+    HeightChanged(f32),
+    ResizeEdgeChanged(f32),
+    TitleAlignmentChanged(TitleAlignment),
+    StylePresetChanged(TitlebarStylePreset),
+    LightDiameterChanged(f32),
+}
+
+fn subscription(_state: &State) -> Subscription<Message> {
+    iced::window::open_events().map(Message::WindowOpened)
+}
+
+fn update(state: &mut State, message: Message) -> Task<Message> {
+    match message {
+        Message::WindowOpened(id) => {
+            state.window_id = Some(id);
+            Task::none()
+        }
+        Message::Titlebar(tb) => {
+            let Some(window_id) = state.window_id else {
+                return Task::none();
+            };
+            match tb {
+                TitlebarMessage::StartDrag => {
+                    iced::window::drag::<()>(window_id).discard::<Message>()
+                }
+                TitlebarMessage::Minimize => {
+                    iced::window::minimize::<()>(window_id, true).discard::<Message>()
+                }
+                TitlebarMessage::ToggleMaximize => {
+                    state.is_maximized = !state.is_maximized;
+                    iced::window::toggle_maximize::<()>(window_id).discard::<Message>()
+                }
+                TitlebarMessage::Close => iced::window::close::<()>(window_id).discard::<Message>(),
+            }
+        }
+        Message::Resize(direction) => {
+            let Some(window_id) = state.window_id else {
+                return Task::none();
+            };
+            iced::window::drag_resize::<()>(window_id, direction).discard::<Message>()
+        }
+        Message::TitleChanged(s) => {
+            state.title = s;
+            Task::none()
+        }
+        Message::HeightChanged(h) => {
+            state.height = h;
+            Task::none()
+        }
+        Message::ResizeEdgeChanged(e) => {
+            state.resize_edge = e;
+            Task::none()
+        }
+        Message::TitleAlignmentChanged(a) => {
+            state.title_alignment = a;
+            Task::none()
+        }
+        Message::StylePresetChanged(preset) => {
+            state.style_preset = preset;
+            Task::none()
+        }
+        Message::LightDiameterChanged(d) => {
+            state.light_diameter = d;
+            Task::none()
+        }
+    }
+}
+
+fn view(state: &State) -> Element<'_, Message> {
+    let title_label = text("Title:").size(14);
+    let title_input = text_input("Window title", state.title.as_str())
+        .on_input(Message::TitleChanged)
+        .width(250);
+
+    let height_label = text(format!("Height: {:.0} px", state.height)).size(14);
+    let height_slider = slider(24.0..=48.0, state.height, Message::HeightChanged).width(200);
+
+    let resize_label = text(format!("Resize edge: {:.1} px", state.resize_edge)).size(14);
+    let resize_slider =
+        slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged).width(200);
+
+    let light_label = text(format!(
+        "Traffic light size: {:.0} px",
+        state.light_diameter
+    ))
+    .size(14);
+    let light_slider =
+        slider(8.0..=32.0, state.light_diameter, Message::LightDiameterChanged).width(200);
+
+    let alignment_options = [
+        TitleAlignment::Left,
+        TitleAlignment::Center,
+        TitleAlignment::Right,
+    ];
+    let alignment_pick = pick_list(
+        alignment_options,
+        Some(state.title_alignment),
+        Message::TitleAlignmentChanged,
+    )
+    .width(120);
+
+    let style_options = [TitlebarStylePreset::Dark, TitlebarStylePreset::Light];
+    let style_pick = pick_list(
+        style_options,
+        Some(state.style_preset),
+        Message::StylePresetChanged,
+    )
+    .width(120);
+
+    let config_panel = column![
+        text("Change options below; titlebar updates live.").size(14),
+        row![title_label, title_input]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![height_label, height_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![resize_label, resize_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![light_label, light_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![text("Title alignment:").size(14), alignment_pick,]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![text("Style preset:").size(14), style_pick,]
+            .spacing(8)
+            .align_y(Alignment::Center),
+    ]
+    .spacing(12)
+    .padding(Padding::from(20))
+    .width(Length::Fill)
+    .align_x(Alignment::Start);
+
+    let style = TitlebarStyle::from(state.style_preset);
+
+    let title_str = if state.title.is_empty() {
+        "Traffic lights titlebar demo"
+    } else {
+        state.title.as_str()
+    };
+
+    let with_handles: Element<'_, Message> = traffic_lights_titlebar(title_str)
+        .on_message(Message::Titlebar)
+        .height(state.height)
+        .resize_edge(state.resize_edge)
+        .title_alignment(state.title_alignment)
+        .maximized(state.is_maximized)
+        .light_diameter(state.light_diameter)
+        .style(style)
+        .with_content(config_panel, Message::Resize);
+
+    container_widget(with_handles)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into()
+}

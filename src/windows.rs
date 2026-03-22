@@ -1,31 +1,18 @@
-//! Custom titlebar widget for iced applications with decorations disabled.
+//! Windows-style titlebar (icons on the right) for iced with decorations disabled.
 //!
-//! Emits [TitlebarMessage] that the app maps to [iced::window] tasks in its update function.
-//! Also provides resize handles for borderless windows (edges and corners).
+//! Emits [TitlebarMessage](crate::common::TitlebarMessage) that the app maps to [iced::window] tasks.
+//! Resize helpers live in [crate::common].
 
+pub use crate::common::{
+    resize_handles, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE,
+};
+
+use crate::common::{draggable_title_area, surround_with_resize_edges};
 use crate::style::{self, TitleAlignment};
 use iced::alignment::Horizontal;
-use iced::mouse::Interaction;
 use iced::widget::svg::Handle as SvgHandle;
-use iced::widget::{button, column, container, mouse_area, row, svg, text};
+use iced::widget::{button, container, row, svg};
 use iced::{Alignment, Element, Length};
-
-/// Messages emitted by the custom titlebar widget.
-/// Map these in your app's update to the corresponding [iced::window] tasks.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TitlebarMessage {
-    /// User pressed on the draggable title area — run `window::drag(window_id)`.
-    StartDrag,
-    /// User clicked minimize — run `window::minimize(window_id, true)`.
-    Minimize,
-    /// User clicked maximize/restore or double-clicked the title bar — run `window::toggle_maximize(window_id)`.
-    ToggleMaximize,
-    /// User clicked close — run `window::close(window_id)`.
-    Close,
-}
-
-/// Default height of the titlebar in pixels.
-pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 29.0;
 
 pub const DEFAULT_ICON_WIDTH: f32 = 45.0;
 
@@ -74,8 +61,10 @@ impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
 ///
 /// ```
 /// # use iced_custom_titlebar::{titlebar, TitlebarMessage};
+/// # use iced::Element;
+/// # #[derive(Clone)]
 /// # enum Message { Titlebar(TitlebarMessage) }
-/// let bar = titlebar("My App").on_message(Message::Titlebar).into();
+/// let _bar: Element<'_, Message> = titlebar("My App").on_message(Message::Titlebar).into();
 /// ```
 pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
     Titlebar {
@@ -171,27 +160,16 @@ where
         content: impl Into<Element<'a, Message>>,
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
     ) -> Element<'a, Message> {
-        let edge = self.resize_edge_size.unwrap_or(RESIZE_EDGE_SIZE);
-        let style = self.style;
+        let resize_edge_size = self.resize_edge_size;
+        let chrome = self.style;
         let bar: Element<'a, Message> = self.into();
-
-        let inner = column![bar, content.into()]
-            .spacing(0)
-            .width(Length::Fill)
-            .height(Length::Fill);
-
-        let with_handles = resize_handles_with_sizes(inner, to_resize, edge, edge);
-        container(with_handles)
-            .style(move |_theme| {
-                iced::widget::container::Style::default().border(
-                    iced::Border::default()
-                        .width(edge)
-                        .color(style.border),
-                )
-            })
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+        surround_with_resize_edges(
+            bar,
+            content.into(),
+            resize_edge_size,
+            chrome,
+            to_resize,
+        )
     }
 }
 
@@ -207,22 +185,7 @@ fn build_titlebar_element<'a, Message>(
 where
     Message: Clone + 'a + 'static,
 {
-    let title_align = to_iced_alignment(title_alignment);
-
-    let draggable = container(
-        mouse_area(
-            container(text(title_str).size(14).color(style.font_color))
-                .padding(iced::Padding::from([8, 12]))
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .align_x(title_align)
-                .align_y(Alignment::Center),
-        )
-        .on_press(to_message(TitlebarMessage::StartDrag))
-        .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
-    )
-    .width(Length::Fill)
-    .height(Length::Fill);
+    let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
 
     let s_min = style;
     let s_max = style;
@@ -320,153 +283,46 @@ where
     )
 }
 
-fn to_iced_alignment(a: TitleAlignment) -> Alignment {
-    match a {
-        TitleAlignment::Left => Alignment::Start,
-        TitleAlignment::Center => Alignment::Center,
-        TitleAlignment::Right => Alignment::End,
-    }
-}
-
 /// SVG handle for the minimize icon: a single horizontal line 10px wide (crisp 10×10 viewBox, 1px stroke).
 fn minimize_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/minimize.svg")).to_vec(),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/windows/minimize.svg"
+        ))
+        .to_vec(),
     )
 }
 
 /// SVG handle for the maximize icon: single square (expand to full screen). Shown when window is not maximized.
 fn maximize_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/maximize.svg")).to_vec(),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/windows/maximize.svg"
+        ))
+        .to_vec(),
     )
 }
 
 /// SVG handle for the restore icon: two overlapping squares (restore down). Shown when window is maximized.
 fn restore_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/restore.svg")).to_vec(),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/windows/restore.svg"
+        ))
+        .to_vec(),
     )
 }
 
 /// SVG handle for the close icon: an X (crisp 10×10, 1px stroke, butt caps to match reference).
 fn close_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/close.svg")).to_vec(),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/windows/close.svg"
+        ))
+        .to_vec(),
     )
-}
-
-// ---------------------------------------------------------------------------
-// Resize handles (for borderless windows)
-// ---------------------------------------------------------------------------
-
-/// Width or height of edge resize strips in pixels.
-pub const RESIZE_EDGE_SIZE: f32 = 5.0;
-
-/// Size of corner resize handles (each side) in pixels.
-pub const RESIZE_CORNER_SIZE: f32 = 5.0;
-
-fn resize_cursor_for(direction: iced::window::Direction) -> Interaction {
-    use iced::window::Direction;
-    match direction {
-        Direction::North | Direction::South => Interaction::ResizingVertically,
-        Direction::East | Direction::West => Interaction::ResizingHorizontally,
-        Direction::NorthEast | Direction::SouthWest => Interaction::ResizingDiagonallyUp,
-        Direction::NorthWest | Direction::SouthEast => Interaction::ResizingDiagonallyDown,
-    }
-}
-
-fn resize_handles_with_sizes<'a, Message>(
-    content: impl Into<Element<'a, Message>>,
-    to_message: impl Fn(iced::window::Direction) -> Message + 'a,
-    edge_size: f32,
-    corner_size: f32,
-) -> Element<'a, Message>
-where
-    Message: Clone + 'a,
-{
-    let resize_region = |direction: iced::window::Direction, width: Length, height: Length| {
-        container(
-            mouse_area(
-                container(text(" ").size(1))
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-            )
-            .interaction(resize_cursor_for(direction))
-            .on_press(to_message(direction)),
-        )
-        .width(width)
-        .height(height)
-    };
-
-    let nw = resize_region(
-        iced::window::Direction::NorthWest,
-        Length::Fixed(corner_size),
-        Length::Fixed(corner_size),
-    );
-    let n = resize_region(
-        iced::window::Direction::North,
-        Length::Fill,
-        Length::Fixed(edge_size),
-    );
-    let ne = resize_region(
-        iced::window::Direction::NorthEast,
-        Length::Fixed(corner_size),
-        Length::Fixed(corner_size),
-    );
-
-    let w = resize_region(
-        iced::window::Direction::West,
-        Length::Fixed(edge_size),
-        Length::Fill,
-    );
-    let e = resize_region(
-        iced::window::Direction::East,
-        Length::Fixed(edge_size),
-        Length::Fill,
-    );
-
-    let sw = resize_region(
-        iced::window::Direction::SouthWest,
-        Length::Fixed(corner_size),
-        Length::Fixed(corner_size),
-    );
-    let s = resize_region(
-        iced::window::Direction::South,
-        Length::Fill,
-        Length::Fixed(edge_size),
-    );
-    let se = resize_region(
-        iced::window::Direction::SouthEast,
-        Length::Fixed(corner_size),
-        Length::Fixed(corner_size),
-    );
-
-    let top_row = row![nw, n, ne].spacing(0);
-    let mid_row = row![w, content.into(), e].spacing(0);
-    let bot_row = row![sw, s, se].spacing(0);
-
-    column![top_row, mid_row, bot_row]
-        .spacing(0)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
-}
-
-/// Wraps content with invisible resize handles on all four edges and four corners.
-///
-/// When window decorations are disabled, use this so the user can resize by dragging
-/// the edges (North, South, East, West) and corners (NorthWest, NorthEast, SouthWest, SouthEast).
-/// On left press, each handle emits a message with the corresponding [iced::window::Direction];
-/// map it to `window::drag_resize(window_id, direction)` in your update.
-///
-/// For a titlebar + content layout with configurable edge size, use [Titlebar::with_content] instead.
-pub fn resize_handles<'a, Message>(
-    content: impl Into<Element<'a, Message>>,
-    to_message: impl Fn(iced::window::Direction) -> Message + 'a,
-) -> Element<'a, Message>
-where
-    Message: Clone + 'a,
-{
-    resize_handles_with_sizes(content, to_message, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE)
 }

@@ -45,7 +45,7 @@ pub struct TitlebarStyle {
     pub close_hover: Color,
     /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
     pub icon: Color,
-    /// Color of the border around the app (the resize-edge / drag region). The titlebar draws this border when using [Titlebar::with_content](crate::titlebar::Titlebar::with_content).
+    /// Color of the border around the app (the resize-edge / drag region). The titlebar draws this border when using [Titlebar::with_content](crate::windows::Titlebar::with_content).
     pub border: Color,
     /// Color of the title text in the draggable area.
     pub font_color: Color,
@@ -148,5 +148,18 @@ pub fn close_button_style(
         s.background = Some(iced::Background::Color(style.close_hover));
     }
 
+    s
+}
+
+/// Flat traffic-light buttons: bar background only, no hover or pressed highlight.
+pub fn traffic_light_button_style(
+    style: &TitlebarStyle,
+    _theme: &Theme,
+    _status: ButtonStatus,
+) -> button::Style {
+    let mut s = button::Style::default();
+    s.background = Some(iced::Background::Color(style.bar));
+    s.border = iced::Border::default().width(0.0);
+    s.text_color = style.icon;
     s
 }
