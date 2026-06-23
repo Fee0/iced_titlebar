@@ -8,7 +8,7 @@ use iced::widget::{
 };
 use iced::{Alignment, Element, Length, Padding, Settings, Subscription, Task};
 
-use iced_custom_titlebar::{TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows};
+use iced_title_bar::{TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)

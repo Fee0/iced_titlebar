@@ -7,7 +7,7 @@
 //! # Example (Windows-style chrome)
 //!
 //! ```ignore
-//! use iced_custom_titlebar::{titlebar_windows, TitlebarMessage};
+//! use iced_title_bar::{titlebar_windows, TitlebarMessage};
 //!
 //! // In your view (builder style, like other iced widgets). Pass current maximized state so the middle button shows the correct icon:
 //! let bar = titlebar_windows("My App").maximized(is_maximized).on_message(Message::Titlebar).into();
@@ -22,7 +22,7 @@
 //! # macOS-style (traffic lights) titlebar
 //!
 //! ```ignore
-//! use iced_custom_titlebar::{titlebar_mac, TitlebarMessage};
+//! use iced_title_bar::{titlebar_mac, TitlebarMessage};
 //!
 //! let bar = titlebar_mac("My App")
 //!     .maximized(is_maximized)

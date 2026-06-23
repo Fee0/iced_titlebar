@@ -1,4 +1,4 @@
-# iced_custom_titlebar
+# iced_title_bar
 
 Custom window titlebar for [iced](https://iced.rs): drag region, minimize, maximize/restore, and close. Messages map
 to [`iced::window`](https://docs.rs/iced/latest/iced/window/) tasks in your `update` handler.
