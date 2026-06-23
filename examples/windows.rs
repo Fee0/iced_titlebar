@@ -171,7 +171,10 @@ fn view(state: &State) -> Element<'_, Message> {
     };
 
     // Pass any iced Element as the title — here a simple text widget.
-    let title_element: Element<'_, Message> = text(title_str).size(14).into();
+    let title_element: Element<'_, Message> = container_widget(text(title_str).size(14))
+        .align_y(Alignment::Center)
+        .height(Length::Fill)
+        .into();
 
     let with_handles: Element<'_, Message> = titlebar_windows(title_element)
         .on_message(Message::Titlebar)
