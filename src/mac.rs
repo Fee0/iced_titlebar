@@ -219,6 +219,9 @@ pub struct TitleBarMac<'a, Message, Theme = iced::Theme> {
     /// Which side of the bar the traffic lights appear on. Defaults to [ControlsSide::Left].
     pub controls_side: ControlsSide,
     pub resize_edge_size: Option<f32>,
+    /// Optional visual border width (in pixels). When set, the drawn border is this thick while
+    /// the drag zone remains `resize_edge_size`. Defaults to matching `resize_edge_size`.
+    pub border_width: Option<f32>,
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
     _theme: std::marker::PhantomData<Theme>,
 }
@@ -255,6 +258,7 @@ pub fn titlebar_mac<'a, Message, Theme>(
         lights_padding: iced::Padding::from([0.0, 12.0]),
         controls_side: ControlsSide::Left,
         resize_edge_size: None,
+        border_width: None,
         on_message: None,
         _theme: std::marker::PhantomData,
     }
@@ -278,6 +282,14 @@ impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme> {
 
     pub fn resize_edge(mut self, size: f32) -> Self {
         self.resize_edge_size = Some(size.max(0.0));
+        self
+    }
+
+    /// Sets the visual border width (in pixels) independently of the drag zone size.
+    /// Useful for a thin 1px border with a larger drag hit zone.
+    /// When not set, defaults to `resize_edge_size`.
+    pub fn border_width(mut self, width: f32) -> Self {
+        self.border_width = Some(width.max(0.0));
         self
     }
 
@@ -336,9 +348,17 @@ where
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
     ) -> Element<'a, Message, Theme, iced::Renderer> {
         let resize_edge_size = self.resize_edge_size;
+        let border_width = self.border_width;
         let chrome = self.style;
         let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
-        surround_with_resize_edges(bar, content.into(), resize_edge_size, chrome, to_resize)
+        surround_with_resize_edges(
+            bar,
+            content.into(),
+            resize_edge_size,
+            border_width,
+            chrome,
+            to_resize,
+        )
     }
 }
 
@@ -370,6 +390,7 @@ where
         controls_side,
         on_message: Some(Box::new(to_message)),
         resize_edge_size: None,
+        border_width: None,
         _theme: std::marker::PhantomData,
     }
     .into()

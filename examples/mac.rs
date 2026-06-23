@@ -26,6 +26,7 @@ struct State {
     title: String,
     height: f32,
     resize_edge: f32,
+    border_width: f32,
     style_preset: TitlebarStylePreset,
     is_maximized: bool,
     light_diameter: f32,
@@ -39,7 +40,8 @@ impl Default for State {
             window_id: None,
             title: "Traffic lights titlebar demo".to_string(),
             height: 38.0,
-            resize_edge: 1.0,
+            resize_edge: 5.0,
+            border_width: 1.0,
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
             light_diameter: 8.0,
@@ -57,6 +59,7 @@ enum Message {
     TitleChanged(String),
     HeightChanged(f32),
     ResizeEdgeChanged(f32),
+    BorderWidthChanged(f32),
     StylePresetChanged(TitlebarStylePreset),
     LightDiameterChanged(f32),
     IconSpacingChanged(f32),
@@ -109,6 +112,10 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.resize_edge = e;
             Task::none()
         }
+        Message::BorderWidthChanged(w) => {
+            state.border_width = w;
+            Task::none()
+        }
         Message::StylePresetChanged(preset) => {
             state.style_preset = preset;
             Task::none()
@@ -140,6 +147,10 @@ fn view(state: &State) -> Element<'_, Message> {
     let resize_label = text(format!("Resize edge: {:.1} px", state.resize_edge)).size(14);
     let resize_slider =
         slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged).width(200);
+
+    let border_label = text(format!("Border width: {:.1} px", state.border_width)).size(14);
+    let border_slider =
+        slider(0.0..=10.0, state.border_width, Message::BorderWidthChanged).width(200);
 
     let light_label = text(format!(
         "Traffic light size: {:.0} px",
@@ -192,6 +203,9 @@ fn view(state: &State) -> Element<'_, Message> {
         row![resize_label, resize_slider]
             .spacing(8)
             .align_y(Alignment::Center),
+        row![border_label, border_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
         row![light_label, light_slider]
             .spacing(8)
             .align_y(Alignment::Center),
@@ -228,6 +242,7 @@ fn view(state: &State) -> Element<'_, Message> {
         .on_message(Message::Titlebar)
         .height(state.height)
         .resize_edge(state.resize_edge)
+        .border_width(state.border_width)
         .maximized(state.is_maximized)
         .light_diameter(state.light_diameter)
         .icon_spacing(state.icon_spacing)

@@ -47,6 +47,7 @@ pub(crate) fn surround_with_resize_edges<'a, Message, Theme>(
     bar: Element<'a, Message, Theme, iced::Renderer>,
     content: Element<'a, Message, Theme, iced::Renderer>,
     resize_edge_size: Option<f32>,
+    border_width: Option<f32>,
     chrome: TitlebarStyle,
     to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
 ) -> Element<'a, Message, Theme, iced::Renderer>
@@ -56,6 +57,7 @@ where
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
 {
     let edge = resize_edge_size.unwrap_or(RESIZE_EDGE_SIZE);
+    let visual_border = border_width.unwrap_or(edge);
     let style = chrome;
     let inner = column![bar, content]
         .spacing(0)
@@ -65,8 +67,11 @@ where
     let with_handles = resize_handles_with_sizes(inner, to_resize, edge, edge);
     container(with_handles)
         .style(move |_theme| {
-            iced::widget::container::Style::default()
-                .border(iced::Border::default().width(edge).color(style.border))
+            iced::widget::container::Style::default().border(
+                iced::Border::default()
+                    .width(visual_border)
+                    .color(style.border),
+            )
         })
         .width(Length::Fill)
         .height(Length::Fill)

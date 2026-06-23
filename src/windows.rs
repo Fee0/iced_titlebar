@@ -35,6 +35,9 @@ pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
     pub is_maximized: bool,
     /// Optional resize edge thickness (in pixels) for integrated resize handles.
     pub resize_edge_size: Option<f32>,
+    /// Optional visual border width (in pixels). When set, the drawn border is this thick while
+    /// the drag zone remains `resize_edge_size`. Defaults to matching `resize_edge_size`.
+    pub border_width: Option<f32>,
     /// Horizontal spacing between the minimize, maximize, and close buttons only (not the title).
     pub icon_spacing: f32,
     /// Which side of the bar the controls appear on. Defaults to [ControlsSide::Right].
@@ -70,6 +73,7 @@ pub fn titlebar_windows<'a, Message, Theme>(
         height: DEFAULT_TITLEBAR_HEIGHT,
         is_maximized: false,
         resize_edge_size: None,
+        border_width: None,
         icon_spacing: 0.0,
         controls_side: ControlsSide::Right,
         on_message: None,
@@ -100,6 +104,14 @@ impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
     /// Used by [with_content](TitleBarWindows::with_content) when wrapping content in resize handles.
     pub fn resize_edge(mut self, size: f32) -> Self {
         self.resize_edge_size = Some(size.max(0.0));
+        self
+    }
+
+    /// Sets the visual border width (in pixels) independently of the drag zone size.
+    /// Useful for a thin 1px border with a larger drag hit zone.
+    /// When not set, defaults to `resize_edge_size`.
+    pub fn border_width(mut self, width: f32) -> Self {
+        self.border_width = Some(width.max(0.0));
         self
     }
 
@@ -166,9 +178,17 @@ where
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
     ) -> Element<'a, Message, Theme, iced::Renderer> {
         let resize_edge_size = self.resize_edge_size;
+        let border_width = self.border_width;
         let chrome = self.style;
         let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
-        surround_with_resize_edges(bar, content.into(), resize_edge_size, chrome, to_resize)
+        surround_with_resize_edges(
+            bar,
+            content.into(),
+            resize_edge_size,
+            border_width,
+            chrome,
+            to_resize,
+        )
     }
 }
 
