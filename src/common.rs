@@ -36,14 +36,10 @@ where
     Message: Clone + 'a + 'static,
     Theme: container::Catalog + 'static,
 {
-    mouse_area(
-        container(title)
-            .width(Length::Fill)
-            .height(Length::Fill),
-    )
-    .on_press(to_message(TitlebarMessage::StartDrag))
-    .on_double_click(to_message(TitlebarMessage::ToggleMaximize))
-    .into()
+    mouse_area(container(title).width(Length::Fill).height(Length::Fill))
+        .on_press(to_message(TitlebarMessage::StartDrag))
+        .on_double_click(to_message(TitlebarMessage::ToggleMaximize))
+        .into()
 }
 
 /// Stacks `bar` above `content` and wraps the result in resize handles plus a border from `chrome`.

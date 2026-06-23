@@ -166,8 +166,12 @@ fn view(state: &State) -> Element<'_, Message> {
         state.lights_padding
     ))
     .size(14_f32);
-    let lights_padding_slider =
-        slider(0.0..=32.0, state.lights_padding, Message::LightsPaddingChanged).width(200);
+    let lights_padding_slider = slider(
+        0.0..=32.0,
+        state.lights_padding,
+        Message::LightsPaddingChanged,
+    )
+    .width(200);
 
     let style_options = [TitlebarStylePreset::Dark, TitlebarStylePreset::Light];
     let style_pick = pick_list(

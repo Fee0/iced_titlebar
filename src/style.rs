@@ -119,16 +119,3 @@ pub fn close_button_style<Theme>(
         ..Default::default()
     }
 }
-
-/// Flat traffic-light buttons: transparent background, no hover or pressed highlight.
-pub fn traffic_light_button_style<Theme>(
-    style: &TitlebarStyle,
-    _theme: &Theme,
-    _status: ButtonStatus,
-) -> button::Style {
-    button::Style {
-        border: iced::Border::default().width(0.0),
-        text_color: style.icon,
-        ..Default::default()
-    }
-}

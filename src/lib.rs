@@ -45,9 +45,8 @@ pub use common::{
     DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, TitlebarMessage, resize_handles,
 };
 pub use mac::{
-    TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT, TITLEBAR_MAC_LIGHT_SPACING,
-    TitleBarMac, default_titlebar_mac_light_hit, titlebar_mac,
-    titlebar_mac_with_style,
+    TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT, TITLEBAR_MAC_LIGHT_SPACING, TitleBarMac,
+    default_titlebar_mac_light_hit, titlebar_mac, titlebar_mac_with_style,
 };
 pub use style::{ControlsSide, TitlebarStyle, TitlebarStylePreset};
 pub use windows::{

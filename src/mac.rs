@@ -7,10 +7,15 @@ use crate::common::{
     DEFAULT_TITLEBAR_HEIGHT, TitlebarMessage, draggable_title_area, surround_with_resize_edges,
 };
 use crate::style::{self, ControlsSide};
+use iced::advanced::layout::{self, Layout};
+use iced::advanced::renderer;
+use iced::advanced::svg;
+use iced::advanced::widget::Tree;
+use iced::advanced::{Clipboard, Shell, Widget};
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
-use iced::widget::{button, container, row, svg};
-use iced::{Alignment, Element, Length};
+use iced::widget::{container, row};
+use iced::{Alignment, Element, Event, Length, Rectangle, Size, mouse};
 
 /// Diameter of each traffic light circle in logical pixels (SVG viewBox scales to this).
 pub const TITLEBAR_MAC_LIGHT_DIAMETER: f32 = 18.0;
@@ -26,6 +31,175 @@ pub const TITLEBAR_MAC_LIGHT_HIT: f32 = TITLEBAR_MAC_LIGHT_DIAMETER * 2.0;
 pub fn default_titlebar_mac_light_hit(light_diameter: f32) -> f32 {
     light_diameter * 2.0
 }
+
+// ── TrafficLightButton custom widget ──────────────────────────────────────────
+
+#[derive(Default)]
+struct TrafficLightState {
+    hovered: bool,
+    pressed: bool,
+}
+
+/// A single macOS traffic light button. Owns its three SVG states and manages
+/// hover/press internally via iced's widget tree — no external state needed.
+struct TrafficLightButton<Message> {
+    normal: SvgHandle,
+    hover: SvgHandle,
+    press: SvgHandle,
+    on_press: Message,
+    /// Hit-target side length in logical pixels. The SVG is drawn centered within this.
+    size: f32,
+}
+
+impl<Message, Theme> Widget<Message, Theme, iced::Renderer> for TrafficLightButton<Message>
+where
+    Message: Clone,
+{
+    fn tag(&self) -> iced::advanced::widget::tree::Tag {
+        iced::advanced::widget::tree::Tag::of::<TrafficLightState>()
+    }
+
+    fn state(&self) -> iced::advanced::widget::tree::State {
+        iced::advanced::widget::tree::State::new(TrafficLightState::default())
+    }
+
+    fn size(&self) -> Size<Length> {
+        Size::new(Length::Fixed(self.size), Length::Fill)
+    }
+
+    fn layout(
+        &mut self,
+        _tree: &mut Tree,
+        _renderer: &iced::Renderer,
+        limits: &layout::Limits,
+    ) -> layout::Node {
+        let size = limits.resolve(
+            Length::Fixed(self.size),
+            Length::Fill,
+            Size::new(self.size, self.size),
+        );
+        layout::Node::new(size)
+    }
+
+    fn draw(
+        &self,
+        tree: &Tree,
+        renderer: &mut iced::Renderer,
+        _theme: &Theme,
+        _style: &renderer::Style,
+        layout: Layout<'_>,
+        _cursor: mouse::Cursor,
+        viewport: &Rectangle,
+    ) {
+        use iced::advanced::svg::Renderer as SvgRenderer;
+
+        let state = tree.state.downcast_ref::<TrafficLightState>();
+        let handle = if state.pressed {
+            &self.press
+        } else if state.hovered {
+            &self.hover
+        } else {
+            &self.normal
+        };
+
+        let bounds = layout.bounds();
+        let img_side = self.size.min(bounds.width).min(bounds.height);
+        let svg_bounds = Rectangle {
+            x: bounds.x + (bounds.width - img_side) / 2.0,
+            y: bounds.y + (bounds.height - img_side) / 2.0,
+            width: img_side,
+            height: img_side,
+        };
+
+        renderer.draw_svg(
+            svg::Svg {
+                handle: handle.clone(),
+                color: None,
+                rotation: iced::Radians(0.0),
+                opacity: 1.0,
+            },
+            svg_bounds,
+            *viewport,
+        );
+    }
+
+    fn update(
+        &mut self,
+        tree: &mut Tree,
+        event: &Event,
+        layout: Layout<'_>,
+        cursor: mouse::Cursor,
+        _renderer: &iced::Renderer,
+        _clipboard: &mut dyn Clipboard,
+        shell: &mut Shell<'_, Message>,
+        _viewport: &Rectangle,
+    ) {
+        let state = tree.state.downcast_mut::<TrafficLightState>();
+        let bounds = layout.bounds();
+
+        match event {
+            Event::Mouse(mouse::Event::CursorMoved { .. }) => {
+                let over = cursor.is_over(bounds);
+                if over != state.hovered {
+                    state.hovered = over;
+                    if !over {
+                        state.pressed = false;
+                    }
+                    shell.request_redraw();
+                }
+            }
+            Event::Mouse(mouse::Event::CursorLeft) if state.hovered || state.pressed => {
+                state.hovered = false;
+                state.pressed = false;
+                shell.request_redraw();
+            }
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left))
+                if cursor.is_over(bounds) =>
+            {
+                state.pressed = true;
+                shell.request_redraw();
+            }
+            Event::Mouse(mouse::Event::ButtonReleased(mouse::Button::Left)) if state.pressed => {
+                let fired = cursor.is_over(bounds);
+                state.pressed = false;
+                shell.request_redraw();
+                if fired {
+                    shell.publish(self.on_press.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn mouse_interaction(
+        &self,
+        tree: &Tree,
+        _layout: Layout<'_>,
+        _cursor: mouse::Cursor,
+        _viewport: &Rectangle,
+        _renderer: &iced::Renderer,
+    ) -> mouse::Interaction {
+        let state = tree.state.downcast_ref::<TrafficLightState>();
+        if state.hovered {
+            mouse::Interaction::Pointer
+        } else {
+            mouse::Interaction::None
+        }
+    }
+}
+
+impl<'a, Message, Theme> From<TrafficLightButton<Message>>
+    for Element<'a, Message, Theme, iced::Renderer>
+where
+    Message: Clone + 'a,
+    Theme: 'a,
+{
+    fn from(btn: TrafficLightButton<Message>) -> Self {
+        Element::new(btn)
+    }
+}
+
+// ── TitleBarMac builder ───────────────────────────────────────────────────────
 
 /// macOS-style titlebar: traffic lights on the left, draggable title filling the rest.
 ///
@@ -141,10 +315,8 @@ impl<'a, Message, Theme> From<TitleBarMac<'a, Message, Theme>>
     for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
-    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    Theme: container::Catalog + 'static,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
-    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     fn from(value: TitleBarMac<'a, Message, Theme>) -> Self {
         build_titlebar_mac_element(value)
@@ -154,11 +326,8 @@ where
 impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme>
 where
     Message: Clone + 'a + 'static,
-    Theme:
-        button::Catalog + container::Catalog + svg::Catalog + iced::widget::text::Catalog + 'static,
-    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
-    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     /// Titlebar on top of `content`, wrapped in resize handles (same behavior as [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content)).
     pub fn with_content(
@@ -187,10 +356,8 @@ pub fn titlebar_mac_with_style<'a, Message, Theme>(
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
-    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    Theme: container::Catalog + 'static,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
-    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     TitleBarMac {
         title: title.into(),
@@ -213,10 +380,8 @@ fn build_titlebar_mac_element<'a, Message, Theme>(
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
-    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    Theme: container::Catalog + 'static,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
-    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     let to_message = bar
         .on_message
@@ -228,41 +393,39 @@ where
     let lights_padding = bar.lights_padding;
     let controls_side = bar.controls_side;
 
+    let hit = default_titlebar_mac_light_hit(light_diameter);
+
+    let close_msg = to_message(TitlebarMessage::Close);
+    let min_msg = to_message(TitlebarMessage::Minimize);
+    let max_msg = to_message(TitlebarMessage::ToggleMaximize);
     let draggable = draggable_title_area(bar.title, &*to_message);
 
-    let hit = default_titlebar_mac_light_hit(light_diameter);
-    let s_close = style;
-    let s_min = style;
-    let s_max = style;
+    let close_btn: Element<'a, Message, Theme, iced::Renderer> = TrafficLightButton {
+        normal: macos_close_normal(),
+        hover: macos_close_hover(),
+        press: macos_close_press(),
+        on_press: close_msg,
+        size: hit,
+    }
+    .into();
 
-    let light_icon = |handle: SvgHandle| {
-        container(svg(handle).width(hit).height(hit))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .align_x(Horizontal::Center)
-            .align_y(Alignment::Center)
-    };
+    let min_btn: Element<'a, Message, Theme, iced::Renderer> = TrafficLightButton {
+        normal: macos_minimize_normal(),
+        hover: macos_minimize_hover(),
+        press: macos_minimize_press(),
+        on_press: min_msg,
+        size: hit,
+    }
+    .into();
 
-    let close_btn = button(light_icon(macos_close_normal()))
-        .on_press(to_message(TitlebarMessage::Close))
-        .style(move |theme, status| style::traffic_light_button_style(&s_close, theme, status))
-        .padding(0)
-        .width(Length::Fixed(hit))
-        .height(Length::Fill);
-
-    let min_btn = button(light_icon(macos_minimize_normal()))
-        .on_press(to_message(TitlebarMessage::Minimize))
-        .style(move |theme, status| style::traffic_light_button_style(&s_min, theme, status))
-        .padding(0)
-        .width(Length::Fixed(hit))
-        .height(Length::Fill);
-
-    let max_btn = button(light_icon(macos_maximize_normal()))
-        .on_press(to_message(TitlebarMessage::ToggleMaximize))
-        .style(move |theme, status| style::traffic_light_button_style(&s_max, theme, status))
-        .padding(0)
-        .width(Length::Fixed(hit))
-        .height(Length::Fill);
+    let max_btn: Element<'a, Message, Theme, iced::Renderer> = TrafficLightButton {
+        normal: macos_maximize_normal(),
+        hover: macos_maximize_hover(),
+        press: macos_maximize_press(),
+        on_press: max_msg,
+        size: hit,
+    }
+    .into();
 
     let lights_row = row![close_btn, min_btn, max_btn]
         .spacing(icon_spacing)
@@ -272,6 +435,7 @@ where
     let lights_block = container(lights_row)
         .padding(lights_padding)
         .height(Length::Fill)
+        .align_x(Horizontal::Center)
         .align_y(Alignment::Center);
 
     let bar_row = if controls_side == ControlsSide::Left {
@@ -294,11 +458,33 @@ where
         .into()
 }
 
+// ── Embedded SVG assets ───────────────────────────────────────────────────────
+
 fn macos_close_normal() -> SvgHandle {
     SvgHandle::from_memory(
         include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/svg/macos/1-close-1-normal.svg"
+        ))
+        .to_vec(),
+    )
+}
+
+fn macos_close_hover() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/2-close-2-hover.svg"
+        ))
+        .to_vec(),
+    )
+}
+
+fn macos_close_press() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/2-close-3-press.svg"
         ))
         .to_vec(),
     )
@@ -314,11 +500,51 @@ fn macos_minimize_normal() -> SvgHandle {
     )
 }
 
+fn macos_minimize_hover() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/2-minimize-2-hover.svg"
+        ))
+        .to_vec(),
+    )
+}
+
+fn macos_minimize_press() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/2-minimize-3-press.svg"
+        ))
+        .to_vec(),
+    )
+}
+
 fn macos_maximize_normal() -> SvgHandle {
     SvgHandle::from_memory(
         include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/svg/macos/3-maximize-1-normal.svg"
+        ))
+        .to_vec(),
+    )
+}
+
+fn macos_maximize_hover() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/3-maximize-2-hover.svg"
+        ))
+        .to_vec(),
+    )
+}
+
+fn macos_maximize_press() -> SvgHandle {
+    SvgHandle::from_memory(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/svg/macos/3-maximize-3-press.svg"
         ))
         .to_vec(),
     )
