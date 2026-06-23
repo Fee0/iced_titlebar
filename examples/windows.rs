@@ -6,13 +6,17 @@
 use iced::widget::{
     column, container as container_widget, pick_list, row, slider, text, text_input,
 };
-use iced::{Alignment, Element, Length, Padding, Subscription, Task};
+use iced::{Alignment, Element, Length, Padding, Settings, Subscription, Task};
 
 use iced_custom_titlebar::{TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)
         .subscription(subscription)
+        .settings(Settings {
+            antialiasing: true,
+            ..Settings::default()
+        })
         .decorations(false)
         .run()
 }

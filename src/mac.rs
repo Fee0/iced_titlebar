@@ -19,12 +19,12 @@ pub const TITLEBAR_MAC_LIGHT_DIAMETER: f32 = 18.0;
 pub const TITLEBAR_MAC_LIGHT_SPACING: f32 = 8.0;
 
 /// Default hit-target size when using [TitleBarMac::light_diameter] / [default_titlebar_mac_light_hit].
-pub const TITLEBAR_MAC_LIGHT_HIT: f32 = 36.0;
+pub const TITLEBAR_MAC_LIGHT_HIT: f32 = TITLEBAR_MAC_LIGHT_DIAMETER * 2.0;
 
-/// Suggested button hit size for a given icon diameter (about 2× the glyph, minimum 24px).
+/// Suggested button hit size for a given icon diameter (about 2× the glyph).
 #[must_use]
 pub fn default_titlebar_mac_light_hit(light_diameter: f32) -> f32 {
-    (light_diameter * 2.0).max(24.0)
+    light_diameter * 2.0
 }
 
 /// macOS-style titlebar: traffic lights on the left, draggable title filling the rest.
@@ -40,6 +40,8 @@ pub struct TitleBarMac<'a, Message, Theme = iced::Theme> {
     pub light_diameter: f32,
     /// Horizontal spacing between the three traffic lights.
     pub icon_spacing: f32,
+    /// Padding around the traffic lights group.
+    pub lights_padding: iced::Padding,
     /// Which side of the bar the traffic lights appear on. Defaults to [ControlsSide::Left].
     pub controls_side: ControlsSide,
     pub resize_edge_size: Option<f32>,
@@ -56,6 +58,7 @@ impl<'a, Message, Theme> std::fmt::Debug for TitleBarMac<'a, Message, Theme> {
             .field("is_maximized", &self.is_maximized)
             .field("light_diameter", &self.light_diameter)
             .field("icon_spacing", &self.icon_spacing)
+            .field("lights_padding", &self.lights_padding)
             .field("controls_side", &self.controls_side)
             .field("resize_edge_size", &self.resize_edge_size)
             .field("on_message", &self.on_message.is_some())
@@ -71,10 +74,11 @@ pub fn titlebar_mac<'a, Message, Theme>(
     TitleBarMac {
         title: title.into(),
         style: style::TitlebarStyle::default(),
-        height: DEFAULT_TITLEBAR_HEIGHT,
+        height: 38.0,
         is_maximized: false,
-        light_diameter: TITLEBAR_MAC_LIGHT_DIAMETER,
-        icon_spacing: 0.0,
+        light_diameter: 8.0,
+        icon_spacing: 6.0,
+        lights_padding: iced::Padding::from([0.0, 12.0]),
         controls_side: ControlsSide::Left,
         resize_edge_size: None,
         on_message: None,
@@ -117,6 +121,12 @@ impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme> {
     /// Sets horizontal spacing between the three traffic lights.
     pub fn icon_spacing(mut self, spacing: f32) -> Self {
         self.icon_spacing = spacing.clamp(0.0, 64.0);
+        self
+    }
+
+    /// Sets padding around the traffic lights group (e.g. `Padding::default().left(8.0)`).
+    pub fn lights_padding(mut self, padding: impl Into<iced::Padding>) -> Self {
+        self.lights_padding = padding.into();
         self
     }
 
@@ -189,6 +199,7 @@ where
         is_maximized,
         light_diameter: light_diameter.clamp(4.0, 64.0),
         icon_spacing: icon_spacing.clamp(0.0, 64.0),
+        lights_padding: iced::Padding::ZERO,
         controls_side,
         on_message: Some(Box::new(to_message)),
         resize_edge_size: None,
@@ -214,18 +225,18 @@ where
     let height = bar.height;
     let light_diameter = bar.light_diameter;
     let icon_spacing = bar.icon_spacing;
+    let lights_padding = bar.lights_padding;
     let controls_side = bar.controls_side;
 
     let draggable = draggable_title_area(bar.title, &*to_message);
 
-    let d = light_diameter;
     let hit = default_titlebar_mac_light_hit(light_diameter);
     let s_close = style;
     let s_min = style;
     let s_max = style;
 
     let light_icon = |handle: SvgHandle| {
-        container(svg(handle).width(d).height(d))
+        container(svg(handle).width(hit).height(hit))
             .width(Length::Fill)
             .height(Length::Fill)
             .align_x(Horizontal::Center)
@@ -235,18 +246,21 @@ where
     let close_btn = button(light_icon(macos_close_normal()))
         .on_press(to_message(TitlebarMessage::Close))
         .style(move |theme, status| style::traffic_light_button_style(&s_close, theme, status))
+        .padding(0)
         .width(Length::Fixed(hit))
         .height(Length::Fill);
 
     let min_btn = button(light_icon(macos_minimize_normal()))
         .on_press(to_message(TitlebarMessage::Minimize))
         .style(move |theme, status| style::traffic_light_button_style(&s_min, theme, status))
+        .padding(0)
         .width(Length::Fixed(hit))
         .height(Length::Fill);
 
     let max_btn = button(light_icon(macos_maximize_normal()))
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
         .style(move |theme, status| style::traffic_light_button_style(&s_max, theme, status))
+        .padding(0)
         .width(Length::Fixed(hit))
         .height(Length::Fill);
 
@@ -256,6 +270,7 @@ where
         .height(Length::Fill);
 
     let lights_block = container(lights_row)
+        .padding(lights_padding)
         .height(Length::Fill)
         .align_y(Alignment::Center);
 

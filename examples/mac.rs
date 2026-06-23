@@ -6,12 +6,16 @@
 use iced::widget::{
     column, container as container_widget, pick_list, row, slider, text, text_input,
 };
-use iced::{Alignment, Element, Length, Padding, Subscription, Task};
+use iced::{Alignment, Element, Length, Padding, Settings, Subscription, Task};
 
 use iced_custom_titlebar::{TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_mac};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)
+        .settings(Settings {
+            antialiasing: true,
+            ..Settings::default()
+        })
         .subscription(subscription)
         .decorations(false)
         .run()
@@ -26,6 +30,7 @@ struct State {
     is_maximized: bool,
     light_diameter: f32,
     icon_spacing: f32,
+    lights_padding: f32,
 }
 
 impl Default for State {
@@ -33,12 +38,13 @@ impl Default for State {
         Self {
             window_id: None,
             title: "Traffic lights titlebar demo".to_string(),
-            height: 32.0,
+            height: 38.0,
             resize_edge: 1.0,
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
-            light_diameter: 18.0,
-            icon_spacing: 0.0,
+            light_diameter: 8.0,
+            icon_spacing: 6.0,
+            lights_padding: 12.0,
         }
     }
 }
@@ -54,6 +60,7 @@ enum Message {
     StylePresetChanged(TitlebarStylePreset),
     LightDiameterChanged(f32),
     IconSpacingChanged(f32),
+    LightsPaddingChanged(f32),
 }
 
 fn subscription(_state: &State) -> Subscription<Message> {
@@ -114,6 +121,10 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.icon_spacing = s;
             Task::none()
         }
+        Message::LightsPaddingChanged(p) => {
+            state.lights_padding = p;
+            Task::none()
+        }
     }
 }
 
@@ -150,6 +161,14 @@ fn view(state: &State) -> Element<'_, Message> {
     let icon_spacing_slider =
         slider(0.0..=24.0, state.icon_spacing, Message::IconSpacingChanged).width(200);
 
+    let lights_padding_label = text(format!(
+        "Lights padding (h): {:.1} px",
+        state.lights_padding
+    ))
+    .size(14_f32);
+    let lights_padding_slider =
+        slider(0.0..=32.0, state.lights_padding, Message::LightsPaddingChanged).width(200);
+
     let style_options = [TitlebarStylePreset::Dark, TitlebarStylePreset::Light];
     let style_pick = pick_list(
         style_options,
@@ -173,6 +192,9 @@ fn view(state: &State) -> Element<'_, Message> {
             .spacing(8)
             .align_y(Alignment::Center),
         row![icon_spacing_label, icon_spacing_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
+        row![lights_padding_label, lights_padding_slider]
             .spacing(8)
             .align_y(Alignment::Center),
         row![text("Style preset:").size(14), style_pick,]
@@ -205,6 +227,7 @@ fn view(state: &State) -> Element<'_, Message> {
         .maximized(state.is_maximized)
         .light_diameter(state.light_diameter)
         .icon_spacing(state.icon_spacing)
+        .lights_padding(Padding::from([0.0, state.lights_padding]))
         .style(style)
         .with_content(config_panel, Message::Resize);
 
