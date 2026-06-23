@@ -2,9 +2,8 @@
 //!
 //! Centralizes colors for the titlebar bar, default button background, min/max hover, close hover, and icon color.
 
-use iced::widget::button::{self, Status as ButtonStatus};
-use iced::widget::container;
 use iced::Color;
+use iced::widget::button::{self, Status as ButtonStatus};
 
 /// Horizontal alignment of the title text inside the titlebar draggable area.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -28,17 +27,14 @@ impl std::fmt::Display for TitleAlignment {
     }
 }
 
-/// Style for the titlebar and its buttons: bar and button hover colors, icon color, title font color.
+/// Style for the titlebar and its buttons: hover colors, icon color, title font color.
 ///
-/// - `bar`: Background of the whole titlebar and default background of all three buttons.
-/// - `button_hover`: Hover/pressed background for minimize and maximize buttons.
-/// - `close_hover`: Hover/pressed background for the close button (typically red).
-/// - `icon`: Color used for the SVG window-control icons (minimize, maximize, close) and any button text. SVGs use `currentColor` so they inherit this.
-/// - `font_color`: Color of the title text in the draggable area.
+/// The titlebar background is transparent by default (`background: None`) so it inherits the
+/// active theme's window background. Set `background` to `Some(color)` to paint a solid bar.
 #[derive(Debug, Clone, Copy)]
 pub struct TitlebarStyle {
-    /// Background color for the titlebar and for all buttons in their default state.
-    pub bar: Color,
+    /// Background color of the titlebar strip. `None` = transparent (inherits window background).
+    pub background: Option<Color>,
     /// Hover/pressed background for minimize and maximize buttons.
     pub button_hover: Color,
     /// Hover/pressed background for the close button.
@@ -87,7 +83,7 @@ impl TitlebarStyle {
     pub fn preset(preset: TitlebarStylePreset) -> Self {
         match preset {
             TitlebarStylePreset::Dark => TitlebarStyle {
-                bar: Color::from_rgb8(0, 0, 0),
+                background: None,
                 button_hover: Color::from_rgb8(60, 60, 60),
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(255, 255, 255),
@@ -95,7 +91,7 @@ impl TitlebarStyle {
                 font_color: Color::from_rgb8(255, 255, 255),
             },
             TitlebarStylePreset::Light => TitlebarStyle {
-                bar: Color::from_rgb8(255, 255, 255),
+                background: None,
                 button_hover: Color::from_rgb8(220, 220, 220),
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(0, 0, 0),
@@ -106,12 +102,7 @@ impl TitlebarStyle {
     }
 }
 
-/// Returns the container style for the titlebar (background only; no border).
-pub fn bar_container_style(style: &TitlebarStyle) -> container::Style {
-    container::Style::default().background(iced::Background::Color(style.bar))
-}
-
-/// Returns the button style for minimize and maximize: bar color by default, `button_hover` when hovered/pressed.
+/// Returns the button style for minimize and maximize: transparent by default, `button_hover` when hovered/pressed.
 pub fn min_max_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
@@ -119,19 +110,17 @@ pub fn min_max_button_style<Theme>(
 ) -> button::Style {
     use button::Status::*;
 
-    let mut s = button::Style::default();
-    s.background = Some(iced::Background::Color(style.bar));
-    s.border = iced::Border::default().width(0.0);
-    s.text_color = style.icon;
-
-    if matches!(status, Hovered | Pressed) {
-        s.background = Some(iced::Background::Color(style.button_hover));
+    let background =
+        matches!(status, Hovered | Pressed).then_some(iced::Background::Color(style.button_hover));
+    button::Style {
+        background,
+        border: iced::Border::default().width(0.0),
+        text_color: style.icon,
+        ..Default::default()
     }
-
-    s
 }
 
-/// Returns the button style for the close button: bar color by default, `close_hover` when hovered/pressed.
+/// Returns the button style for the close button: transparent by default, `close_hover` when hovered/pressed.
 pub fn close_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
@@ -139,27 +128,25 @@ pub fn close_button_style<Theme>(
 ) -> button::Style {
     use button::Status::*;
 
-    let mut s = button::Style::default();
-    s.background = Some(iced::Background::Color(style.bar));
-    s.border = iced::Border::default().width(0.0);
-    s.text_color = style.icon;
-
-    if matches!(status, Hovered | Pressed) {
-        s.background = Some(iced::Background::Color(style.close_hover));
+    let background =
+        matches!(status, Hovered | Pressed).then_some(iced::Background::Color(style.close_hover));
+    button::Style {
+        background,
+        border: iced::Border::default().width(0.0),
+        text_color: style.icon,
+        ..Default::default()
     }
-
-    s
 }
 
-/// Flat traffic-light buttons: bar background only, no hover or pressed highlight.
+/// Flat traffic-light buttons: transparent background, no hover or pressed highlight.
 pub fn traffic_light_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
     _status: ButtonStatus,
 ) -> button::Style {
-    let mut s = button::Style::default();
-    s.background = Some(iced::Background::Color(style.bar));
-    s.border = iced::Border::default().width(0.0);
-    s.text_color = style.icon;
-    s
+    button::Style {
+        border: iced::Border::default().width(0.0),
+        text_color: style.icon,
+        ..Default::default()
+    }
 }

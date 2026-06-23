@@ -144,8 +144,12 @@ fn view(state: &State) -> Element<'_, Message> {
         state.light_diameter
     ))
     .size(14);
-    let light_slider =
-        slider(8.0..=32.0, state.light_diameter, Message::LightDiameterChanged).width(200);
+    let light_slider = slider(
+        8.0..=32.0,
+        state.light_diameter,
+        Message::LightDiameterChanged,
+    )
+    .width(200);
 
     let icon_spacing_label = text(format!(
         "Icon spacing (traffic lights): {:.1} px",

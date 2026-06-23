@@ -4,7 +4,7 @@
 //! Resize helpers live in [crate::common].
 
 pub use crate::common::{
-    resize_handles, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE,
+    DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, TitlebarMessage, resize_handles,
 };
 
 use crate::common::{draggable_title_area, surround_with_resize_edges};
@@ -71,7 +71,9 @@ impl<'a, Message, Theme> std::fmt::Debug for TitleBarWindows<'a, Message, Theme>
 /// # enum Message { Titlebar(TitlebarMessage) }
 /// let _bar: Element<'_, Message> = titlebar_windows("My App").on_message(Message::Titlebar).into();
 /// ```
-pub fn titlebar_windows<Message, Theme>(title: impl ToString) -> TitleBarWindows<'static, Message, Theme> {
+pub fn titlebar_windows<Message, Theme>(
+    title: impl ToString,
+) -> TitleBarWindows<'static, Message, Theme> {
     TitleBarWindows {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
@@ -143,7 +145,8 @@ impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
     }
 }
 
-impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>> for Element<'a, Message, Theme, iced::Renderer>
+impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>>
+    for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
     Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
@@ -189,13 +192,7 @@ where
         let resize_edge_size = self.resize_edge_size;
         let chrome = self.style;
         let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
-        surround_with_resize_edges(
-            bar,
-            content.into(),
-            resize_edge_size,
-            chrome,
-            to_resize,
-        )
+        surround_with_resize_edges(bar, content.into(), resize_edge_size, chrome, to_resize)
     }
 }
 
@@ -222,15 +219,12 @@ where
     let s_min = style;
     let s_max = style;
     let s_close = style;
-    let s_bar = style;
 
-    let min_icon = container(
-        svg(minimize_handle()).width(10).height(10).style(
-            move |_theme, _status| svg::Style {
-                color: Some(s_min.icon),
-            },
-        ),
-    )
+    let min_icon = container(svg(minimize_handle()).width(10).height(10).style(
+        move |_theme, _status| svg::Style {
+            color: Some(s_min.icon),
+        },
+    ))
     .width(Length::Fill)
     .height(Length::Fill)
     .align_x(Horizontal::Center)
@@ -254,13 +248,11 @@ where
     .align_x(Horizontal::Center)
     .align_y(Alignment::Center);
 
-    let close_icon = container(
-        svg(close_handle()).width(10).height(10).style(
-            move |_theme, _status| svg::Style {
-                color: Some(s_close.icon),
-            },
-        ),
-    )
+    let close_icon = container(svg(close_handle()).width(10).height(10).style(
+        move |_theme, _status| svg::Style {
+            color: Some(s_close.icon),
+        },
+    ))
     .width(Length::Fill)
     .height(Length::Fill)
     .align_x(Horizontal::Center)
@@ -294,10 +286,14 @@ where
         .height(height)
         .align_y(Alignment::Center);
 
+    let bg = style.background;
     container(row)
-        .style(move |_theme| style::bar_container_style(&s_bar))
         .height(height)
         .width(Length::Fill)
+        .style(move |_theme| iced::widget::container::Style {
+            background: bg.map(iced::Background::Color),
+            ..Default::default()
+        })
         .into()
 }
 

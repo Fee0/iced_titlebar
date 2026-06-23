@@ -45,11 +45,11 @@ pub use common::{
     DEFAULT_TITLEBAR_HEIGHT, RESIZE_CORNER_SIZE, RESIZE_EDGE_SIZE, TitlebarMessage, resize_handles,
 };
 pub use mac::{
-    default_titlebar_mac_light_hit, titlebar_mac, titlebar_mac_with_style, TitleBarMac,
-    TITLEBAR_MAC_LIGHTS_LEFT_PADDING, TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT,
-    TITLEBAR_MAC_LIGHT_SPACING,
+    TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT, TITLEBAR_MAC_LIGHT_SPACING,
+    TITLEBAR_MAC_LIGHTS_LEFT_PADDING, TitleBarMac, default_titlebar_mac_light_hit, titlebar_mac,
+    titlebar_mac_with_style,
 };
 pub use style::{TitleAlignment, TitlebarStyle, TitlebarStylePreset};
 pub use windows::{
-    titlebar_windows, titlebar_windows_with_style, TitleBarWindows, TITLEBAR_WINDOWS_CONTROL_WIDTH,
+    TITLEBAR_WINDOWS_CONTROL_WIDTH, TitleBarWindows, titlebar_windows, titlebar_windows_with_style,
 };

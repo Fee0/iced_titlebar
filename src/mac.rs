@@ -4,7 +4,7 @@
 //! [TitleBarMac::on_message], emitting the same [TitlebarMessage](crate::common::TitlebarMessage) as the Windows-style bar.
 
 use crate::common::{
-    draggable_title_area, surround_with_resize_edges, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT,
+    DEFAULT_TITLEBAR_HEIGHT, TitlebarMessage, draggable_title_area, surround_with_resize_edges,
 };
 use crate::style::{self, TitleAlignment};
 use iced::alignment::Horizontal;
@@ -137,7 +137,8 @@ impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme> {
     }
 }
 
-impl<'a, Message, Theme> From<TitleBarMac<'a, Message, Theme>> for Element<'a, Message, Theme, iced::Renderer>
+impl<'a, Message, Theme> From<TitleBarMac<'a, Message, Theme>>
+    for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
     Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
@@ -147,19 +148,7 @@ where
     <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     fn from(value: TitleBarMac<'a, Message, Theme>) -> Self {
-        let on_message = value.on_message.expect(
-            "titlebar_mac: on_message must be set before converting to Element",
-        );
-        build_titlebar_mac_element(
-            value.title,
-            value.style,
-            value.height,
-            value.title_alignment,
-            value.is_maximized,
-            value.light_diameter,
-            value.icon_spacing,
-            on_message,
-        )
+        build_titlebar_mac_element(value)
     }
 }
 
@@ -181,13 +170,7 @@ where
         let resize_edge_size = self.resize_edge_size;
         let chrome = self.style;
         let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
-        surround_with_resize_edges(
-            bar,
-            content.into(),
-            resize_edge_size,
-            chrome,
-            to_resize,
-        )
+        surround_with_resize_edges(bar, content.into(), resize_edge_size, chrome, to_resize)
     }
 }
 
@@ -211,27 +194,23 @@ where
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
     <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
-    build_titlebar_mac_element(
-        title.to_string(),
+    TitleBarMac {
+        title: title.to_string(),
         style,
-        DEFAULT_TITLEBAR_HEIGHT,
+        height: DEFAULT_TITLEBAR_HEIGHT,
         title_alignment,
         is_maximized,
-        light_diameter.clamp(4.0, 64.0),
-        icon_spacing.clamp(0.0, 64.0),
-        Box::new(to_message),
-    )
+        light_diameter: light_diameter.clamp(4.0, 64.0),
+        icon_spacing: icon_spacing.clamp(0.0, 64.0),
+        on_message: Some(Box::new(to_message)),
+        resize_edge_size: None,
+        _theme: std::marker::PhantomData,
+    }
+    .into()
 }
 
 fn build_titlebar_mac_element<'a, Message, Theme>(
-    title_str: String,
-    style: style::TitlebarStyle,
-    height: f32,
-    title_alignment: TitleAlignment,
-    #[allow(unused_variables)] is_maximized: bool,
-    light_diameter: f32,
-    icon_spacing: f32,
-    to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
+    bar: TitleBarMac<'a, Message, Theme>,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
@@ -241,14 +220,21 @@ where
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
     <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
-    let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
+    let to_message = bar
+        .on_message
+        .expect("titlebar_mac: on_message must be set before converting to Element");
+    let style = bar.style;
+    let height = bar.height;
+    let light_diameter = bar.light_diameter;
+    let icon_spacing = bar.icon_spacing;
+
+    let draggable = draggable_title_area(bar.title, style, bar.title_alignment, &*to_message);
 
     let d = light_diameter;
     let hit = default_titlebar_mac_light_hit(light_diameter);
     let s_close = style;
     let s_min = style;
     let s_max = style;
-    let s_bar = style;
 
     let light_icon = |handle: SvgHandle| {
         container(svg(handle).width(d).height(d))
@@ -291,10 +277,14 @@ where
         .align_y(Alignment::Center)
         .height(height);
 
+    let bg = style.background;
     container(bar_row)
-        .style(move |_theme| style::bar_container_style(&s_bar))
         .height(height)
         .width(Length::Fill)
+        .style(move |_theme| iced::widget::container::Style {
+            background: bg.map(iced::Background::Color),
+            ..Default::default()
+        })
         .into()
 }
 
