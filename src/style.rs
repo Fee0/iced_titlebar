@@ -28,6 +28,15 @@ impl Default for TitlebarStyle {
     }
 }
 
+/// Which side of the titlebar the window-control buttons (close/min/max) appear on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlsSide {
+    /// Controls on the left (macOS default).
+    Left,
+    /// Controls on the right (Windows default).
+    Right,
+}
+
 /// Built-in style variants for the titlebar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TitlebarStylePreset {

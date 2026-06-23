@@ -49,7 +49,7 @@ pub use mac::{
     TITLEBAR_MAC_LIGHTS_LEFT_PADDING, TitleBarMac, default_titlebar_mac_light_hit, titlebar_mac,
     titlebar_mac_with_style,
 };
-pub use style::{TitlebarStyle, TitlebarStylePreset};
+pub use style::{ControlsSide, TitlebarStyle, TitlebarStylePreset};
 pub use windows::{
     TITLEBAR_WINDOWS_CONTROL_WIDTH, TitleBarWindows, titlebar_windows, titlebar_windows_with_style,
 };

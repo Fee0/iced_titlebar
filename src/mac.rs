@@ -6,7 +6,7 @@
 use crate::common::{
     DEFAULT_TITLEBAR_HEIGHT, TitlebarMessage, draggable_title_area, surround_with_resize_edges,
 };
-use crate::style;
+use crate::style::{self, ControlsSide};
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, container, row, svg};
@@ -43,6 +43,8 @@ pub struct TitleBarMac<'a, Message, Theme = iced::Theme> {
     pub light_diameter: f32,
     /// Horizontal spacing between the three traffic lights.
     pub icon_spacing: f32,
+    /// Which side of the bar the traffic lights appear on. Defaults to [ControlsSide::Left].
+    pub controls_side: ControlsSide,
     pub resize_edge_size: Option<f32>,
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
     _theme: std::marker::PhantomData<Theme>,
@@ -57,6 +59,7 @@ impl<'a, Message, Theme> std::fmt::Debug for TitleBarMac<'a, Message, Theme> {
             .field("is_maximized", &self.is_maximized)
             .field("light_diameter", &self.light_diameter)
             .field("icon_spacing", &self.icon_spacing)
+            .field("controls_side", &self.controls_side)
             .field("resize_edge_size", &self.resize_edge_size)
             .field("on_message", &self.on_message.is_some())
             .finish()
@@ -75,6 +78,7 @@ pub fn titlebar_mac<'a, Message, Theme>(
         is_maximized: false,
         light_diameter: TITLEBAR_MAC_LIGHT_DIAMETER,
         icon_spacing: TITLEBAR_MAC_LIGHT_SPACING,
+        controls_side: ControlsSide::Left,
         resize_edge_size: None,
         on_message: None,
         _theme: std::marker::PhantomData,
@@ -116,6 +120,12 @@ impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme> {
     /// Sets horizontal spacing between the three traffic lights.
     pub fn icon_spacing(mut self, spacing: f32) -> Self {
         self.icon_spacing = spacing.clamp(0.0, 64.0);
+        self
+    }
+
+    /// Sets which side of the titlebar the traffic lights appear on.
+    pub fn controls_side(mut self, side: ControlsSide) -> Self {
+        self.controls_side = side;
         self
     }
 }
@@ -166,6 +176,7 @@ pub fn titlebar_mac_with_style<'a, Message, Theme>(
     is_maximized: bool,
     icon_spacing: f32,
     light_diameter: f32,
+    controls_side: ControlsSide,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
@@ -181,6 +192,7 @@ where
         is_maximized,
         light_diameter: light_diameter.clamp(4.0, 64.0),
         icon_spacing: icon_spacing.clamp(0.0, 64.0),
+        controls_side,
         on_message: Some(Box::new(to_message)),
         resize_edge_size: None,
         _theme: std::marker::PhantomData,
@@ -205,6 +217,7 @@ where
     let height = bar.height;
     let light_diameter = bar.light_diameter;
     let icon_spacing = bar.icon_spacing;
+    let controls_side = bar.controls_side;
 
     let draggable = draggable_title_area(bar.title, &*to_message);
 
@@ -245,15 +258,24 @@ where
         .align_y(Alignment::Center)
         .height(Length::Fill);
 
+    let lights_padding = if controls_side == ControlsSide::Left {
+        iced::Padding::default().left(TITLEBAR_MAC_LIGHTS_LEFT_PADDING)
+    } else {
+        iced::Padding::default().right(TITLEBAR_MAC_LIGHTS_LEFT_PADDING)
+    };
     let lights_block = container(lights_row)
-        .padding(iced::Padding::default().left(TITLEBAR_MAC_LIGHTS_LEFT_PADDING))
+        .padding(lights_padding)
         .height(Length::Fill)
         .align_y(Alignment::Center);
 
-    let bar_row = row![lights_block, draggable]
-        .spacing(0)
-        .align_y(Alignment::Center)
-        .height(height);
+    let bar_row = if controls_side == ControlsSide::Left {
+        row![lights_block, draggable]
+    } else {
+        row![draggable, lights_block]
+    }
+    .spacing(0)
+    .align_y(Alignment::Center)
+    .height(height);
 
     let bg = style.background;
     container(bar_row)

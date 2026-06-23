@@ -8,7 +8,7 @@ pub use crate::common::{
 };
 
 use crate::common::{draggable_title_area, surround_with_resize_edges};
-use crate::style;
+use crate::style::{self, ControlsSide};
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, container, row, svg};
@@ -37,6 +37,8 @@ pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
     pub resize_edge_size: Option<f32>,
     /// Horizontal spacing between the minimize, maximize, and close buttons only (not the title).
     pub icon_spacing: f32,
+    /// Which side of the bar the controls appear on. Defaults to [ControlsSide::Right].
+    pub controls_side: ControlsSide,
     /// Callback to convert [TitlebarMessage] into your app's `Message`. Required for interaction.
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
     _theme: std::marker::PhantomData<Theme>,
@@ -50,6 +52,7 @@ impl<'a, Message, Theme> std::fmt::Debug for TitleBarWindows<'a, Message, Theme>
             .field("height", &self.height)
             .field("is_maximized", &self.is_maximized)
             .field("icon_spacing", &self.icon_spacing)
+            .field("controls_side", &self.controls_side)
             .field("on_message", &self.on_message.is_some())
             .finish()
     }
@@ -68,6 +71,7 @@ pub fn titlebar_windows<'a, Message, Theme>(
         is_maximized: false,
         resize_edge_size: None,
         icon_spacing: 0.0,
+        controls_side: ControlsSide::Right,
         on_message: None,
         _theme: std::marker::PhantomData,
     }
@@ -110,6 +114,12 @@ impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
         self.icon_spacing = spacing.clamp(0.0, 64.0);
         self
     }
+
+    /// Sets which side of the titlebar the window controls appear on.
+    pub fn controls_side(mut self, side: ControlsSide) -> Self {
+        self.controls_side = side;
+        self
+    }
 }
 
 impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>>
@@ -131,6 +141,7 @@ where
             value.height,
             value.is_maximized,
             value.icon_spacing,
+            value.controls_side,
             to_message,
         )
     }
@@ -168,6 +179,7 @@ fn build_titlebar_windows_element<'a, Message, Theme>(
     height: f32,
     is_maximized: bool,
     icon_spacing: f32,
+    controls_side: ControlsSide,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
@@ -244,10 +256,14 @@ where
         .height(Length::Fill)
         .align_y(Alignment::Center);
 
-    let row = row![draggable, controls]
-        .spacing(0)
-        .height(height)
-        .align_y(Alignment::Center);
+    let row = if controls_side == ControlsSide::Left {
+        row![controls, draggable]
+    } else {
+        row![draggable, controls]
+    }
+    .spacing(0)
+    .height(height)
+    .align_y(Alignment::Center);
 
     let bg = style.background;
     container(row)
@@ -269,6 +285,7 @@ pub fn titlebar_windows_with_style<'a, Message, Theme>(
     style: style::TitlebarStyle,
     is_maximized: bool,
     icon_spacing: f32,
+    controls_side: ControlsSide,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
@@ -283,6 +300,7 @@ where
         DEFAULT_TITLEBAR_HEIGHT,
         is_maximized,
         icon_spacing,
+        controls_side,
         Box::new(to_message),
     )
 }
