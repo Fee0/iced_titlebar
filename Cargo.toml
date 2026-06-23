@@ -1,5 +1,5 @@
 [package]
-name = "iced_custom_titlebar"
+name = "iced_title_bar"
 version = "0.1.0"
 edition = "2024"
 

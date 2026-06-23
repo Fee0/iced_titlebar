@@ -1258,13 +1258,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "iced_custom_titlebar"
-version = "0.1.0"
-dependencies = [
- "iced",
-]
-
-[[package]]
 name = "iced_debug"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1360,6 +1353,13 @@ dependencies = [
  "rustc-hash 2.1.1",
  "softbuffer",
  "tiny-skia",
+]
+
+[[package]]
+name = "iced_title_bar"
+version = "0.1.0"
+dependencies = [
+ "iced",
 ]
 
 [[package]]
