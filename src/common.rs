@@ -36,14 +36,16 @@ pub(crate) fn title_alignment_to_iced(a: TitleAlignment) -> Alignment {
 }
 
 /// Draggable title strip: single press starts drag, double-click toggles maximize.
-pub(crate) fn draggable_title_area<'a, Message>(
+pub(crate) fn draggable_title_area<'a, Message, Theme>(
     title_str: String,
     style: TitlebarStyle,
     title_alignment: TitleAlignment,
     to_message: &dyn Fn(TitlebarMessage) -> Message,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
+    <Theme as iced::widget::text::Catalog>::Class<'a>: From<iced::widget::text::StyleFn<'a, Theme>>,
 {
     let title_align = title_alignment_to_iced(title_alignment);
     container(
@@ -64,15 +66,17 @@ where
 }
 
 /// Stacks `bar` above `content` and wraps the result in resize handles plus a border from `chrome`.
-pub(crate) fn surround_with_resize_edges<'a, Message>(
-    bar: Element<'a, Message>,
-    content: Element<'a, Message>,
+pub(crate) fn surround_with_resize_edges<'a, Message, Theme>(
+    bar: Element<'a, Message, Theme, iced::Renderer>,
+    content: Element<'a, Message, Theme, iced::Renderer>,
     resize_edge_size: Option<f32>,
     chrome: TitlebarStyle,
     to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
 {
     let edge = resize_edge_size.unwrap_or(RESIZE_EDGE_SIZE);
     let style = chrome;
@@ -102,14 +106,15 @@ fn resize_cursor_for(direction: iced::window::Direction) -> Interaction {
     }
 }
 
-pub(crate) fn resize_handles_with_sizes<'a, Message>(
-    content: impl Into<Element<'a, Message>>,
+pub(crate) fn resize_handles_with_sizes<'a, Message, Theme>(
+    content: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
     to_message: impl Fn(iced::window::Direction) -> Message + 'a,
     edge_size: f32,
     corner_size: f32,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a,
+    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
 {
     let resize_region = |direction: iced::window::Direction, width: Length, height: Length| {
         container(
@@ -185,12 +190,13 @@ where
 ///
 /// For a titlebar + content layout with configurable edge size, use [crate::windows::TitleBarWindows::with_content]
 /// or [crate::mac::TitleBarMac::with_content].
-pub fn resize_handles<'a, Message>(
-    content: impl Into<Element<'a, Message>>,
+pub fn resize_handles<'a, Message, Theme>(
+    content: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
     to_message: impl Fn(iced::window::Direction) -> Message + 'a,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a,
+    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
 {
     resize_handles_with_sizes(content, to_message, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE)
 }

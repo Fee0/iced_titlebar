@@ -11,7 +11,7 @@ use crate::common::{draggable_title_area, surround_with_resize_edges};
 use crate::style::{self, TitleAlignment};
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
-use iced::widget::{button, container, row, svg};
+use iced::widget::{button, container, row, svg, text};
 use iced::{Alignment, Element, Length};
 
 /// Default width in logical pixels for each minimize / maximize / close button hit target.
@@ -24,7 +24,7 @@ pub const TITLEBAR_WINDOWS_CONTROL_WIDTH: f32 = 45.0;
 /// or [with_content](TitleBarWindows::with_content) to stack the bar with content and wrap everything in resize handles.
 /// You must call [on_message](TitleBarWindows::on_message) for the bar to be interactive.
 /// Pass the current window maximized state via [maximized](TitleBarWindows::maximized) so the middle button shows the correct icon (maximize vs restore).
-pub struct TitleBarWindows<'a, Message> {
+pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
     /// Title text shown in the draggable area.
     pub title: String,
     /// Visual style (bar/button colors, icon color).
@@ -43,9 +43,10 @@ pub struct TitleBarWindows<'a, Message> {
     pub icon_spacing: f32,
     /// Callback to convert [TitlebarMessage] into your app's `Message`. Required for interaction.
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
+    _theme: std::marker::PhantomData<Theme>,
 }
 
-impl<'a, Message> std::fmt::Debug for TitleBarWindows<'a, Message> {
+impl<'a, Message, Theme> std::fmt::Debug for TitleBarWindows<'a, Message, Theme> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TitleBarWindows")
             .field("title", &self.title)
@@ -70,7 +71,7 @@ impl<'a, Message> std::fmt::Debug for TitleBarWindows<'a, Message> {
 /// # enum Message { Titlebar(TitlebarMessage) }
 /// let _bar: Element<'_, Message> = titlebar_windows("My App").on_message(Message::Titlebar).into();
 /// ```
-pub fn titlebar_windows<Message>(title: impl ToString) -> TitleBarWindows<'static, Message> {
+pub fn titlebar_windows<Message, Theme>(title: impl ToString) -> TitleBarWindows<'static, Message, Theme> {
     TitleBarWindows {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
@@ -80,12 +81,13 @@ pub fn titlebar_windows<Message>(title: impl ToString) -> TitleBarWindows<'stati
         resize_edge_size: None,
         icon_spacing: 0.0,
         on_message: None,
+        _theme: std::marker::PhantomData,
     }
 }
 
-impl<'a, Message> TitleBarWindows<'a, Message> {
+impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
     /// Sets the callback that maps [TitlebarMessage] to your app's `Message`. Required for drag/button interaction.
-    pub fn on_message<'b, F>(self, f: F) -> TitleBarWindows<'b, Message>
+    pub fn on_message<'b, F>(self, f: F) -> TitleBarWindows<'b, Message, Theme>
     where
         F: Fn(TitlebarMessage) -> Message + 'b,
     {
@@ -98,6 +100,7 @@ impl<'a, Message> TitleBarWindows<'a, Message> {
             resize_edge_size: self.resize_edge_size,
             icon_spacing: self.icon_spacing,
             on_message: Some(Box::new(f)),
+            _theme: std::marker::PhantomData,
         }
     }
 
@@ -140,11 +143,16 @@ impl<'a, Message> TitleBarWindows<'a, Message> {
     }
 }
 
-impl<'a, Message> From<TitleBarWindows<'a, Message>> for Element<'a, Message>
+impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>> for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
-    fn from(value: TitleBarWindows<'a, Message>) -> Self {
+    fn from(value: TitleBarWindows<'a, Message, Theme>) -> Self {
         let to_message = value.on_message.expect(
             "titlebar_windows: on_message must be set before converting to Element (e.g. titlebar_windows(\"App\").on_message(Message::Titlebar).into())",
         );
@@ -160,9 +168,14 @@ where
     }
 }
 
-impl<'a, Message> TitleBarWindows<'a, Message>
+impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     /// Builds a layout with this titlebar on top of `content`, wrapped in resize handles.
     ///
@@ -170,12 +183,12 @@ where
     /// otherwise it falls back to [RESIZE_EDGE_SIZE].
     pub fn with_content(
         self,
-        content: impl Into<Element<'a, Message>>,
+        content: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
-    ) -> Element<'a, Message> {
+    ) -> Element<'a, Message, Theme, iced::Renderer> {
         let resize_edge_size = self.resize_edge_size;
         let chrome = self.style;
-        let bar: Element<'a, Message> = self.into();
+        let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
         surround_with_resize_edges(
             bar,
             content.into(),
@@ -187,7 +200,7 @@ where
 }
 
 /// Builds a custom titlebar element. Used by [From] and [titlebar_windows_with_style].
-fn build_titlebar_windows_element<'a, Message>(
+fn build_titlebar_windows_element<'a, Message, Theme>(
     title_str: String,
     style: style::TitlebarStyle,
     height: f32,
@@ -195,9 +208,14 @@ fn build_titlebar_windows_element<'a, Message>(
     is_maximized: bool,
     icon_spacing: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
 
@@ -286,16 +304,21 @@ where
 /// Builds a custom titlebar with the given style (convenience wrapper around the builder).
 ///
 /// Prefer the builder form: `titlebar_windows(title).style(style).maximized(is_maximized).on_message(to_message).into()`.
-pub fn titlebar_windows_with_style<'a, Message>(
+pub fn titlebar_windows_with_style<'a, Message, Theme>(
     title: impl ToString,
     to_message: impl Fn(TitlebarMessage) -> Message + 'a,
     style: style::TitlebarStyle,
     title_alignment: TitleAlignment,
     is_maximized: bool,
     icon_spacing: f32,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     build_titlebar_windows_element(
         title.to_string(),

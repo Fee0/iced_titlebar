@@ -4,7 +4,7 @@
 
 use iced::widget::button::{self, Status as ButtonStatus};
 use iced::widget::container;
-use iced::{Color, Theme};
+use iced::Color;
 
 /// Horizontal alignment of the title text inside the titlebar draggable area.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -112,7 +112,7 @@ pub fn bar_container_style(style: &TitlebarStyle) -> container::Style {
 }
 
 /// Returns the button style for minimize and maximize: bar color by default, `button_hover` when hovered/pressed.
-pub fn min_max_button_style(
+pub fn min_max_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
     status: ButtonStatus,
@@ -132,7 +132,7 @@ pub fn min_max_button_style(
 }
 
 /// Returns the button style for the close button: bar color by default, `close_hover` when hovered/pressed.
-pub fn close_button_style(
+pub fn close_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
     status: ButtonStatus,
@@ -152,7 +152,7 @@ pub fn close_button_style(
 }
 
 /// Flat traffic-light buttons: bar background only, no hover or pressed highlight.
-pub fn traffic_light_button_style(
+pub fn traffic_light_button_style<Theme>(
     style: &TitlebarStyle,
     _theme: &Theme,
     _status: ButtonStatus,

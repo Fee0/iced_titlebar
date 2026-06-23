@@ -9,7 +9,7 @@ use crate::common::{
 use crate::style::{self, TitleAlignment};
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
-use iced::widget::{button, container, row, svg};
+use iced::widget::{button, container, row, svg, text};
 use iced::{Alignment, Element, Length};
 
 /// Diameter of each traffic light circle in logical pixels (SVG viewBox scales to this).
@@ -33,7 +33,7 @@ pub fn default_titlebar_mac_light_hit(light_diameter: f32) -> f32 {
 /// macOS-style titlebar: traffic lights on the left, draggable title filling the rest.
 ///
 /// Build with [titlebar_mac], chain options, then [.into()](Into::into) after [on_message](TitleBarMac::on_message).
-pub struct TitleBarMac<'a, Message> {
+pub struct TitleBarMac<'a, Message, Theme = iced::Theme> {
     pub title: String,
     pub style: style::TitlebarStyle,
     pub height: f32,
@@ -45,9 +45,10 @@ pub struct TitleBarMac<'a, Message> {
     pub icon_spacing: f32,
     pub resize_edge_size: Option<f32>,
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
+    _theme: std::marker::PhantomData<Theme>,
 }
 
-impl<'a, Message> std::fmt::Debug for TitleBarMac<'a, Message> {
+impl<'a, Message, Theme> std::fmt::Debug for TitleBarMac<'a, Message, Theme> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TitleBarMac")
             .field("title", &self.title)
@@ -64,7 +65,7 @@ impl<'a, Message> std::fmt::Debug for TitleBarMac<'a, Message> {
 }
 
 /// Creates a [TitleBarMac] with defaults. Call [TitleBarMac::on_message] then [.into()](Into::into).
-pub fn titlebar_mac<Message>(title: impl ToString) -> TitleBarMac<'static, Message> {
+pub fn titlebar_mac<Message, Theme>(title: impl ToString) -> TitleBarMac<'static, Message, Theme> {
     TitleBarMac {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
@@ -75,11 +76,12 @@ pub fn titlebar_mac<Message>(title: impl ToString) -> TitleBarMac<'static, Messa
         icon_spacing: TITLEBAR_MAC_LIGHT_SPACING,
         resize_edge_size: None,
         on_message: None,
+        _theme: std::marker::PhantomData,
     }
 }
 
-impl<'a, Message> TitleBarMac<'a, Message> {
-    pub fn on_message<'b, F>(self, f: F) -> TitleBarMac<'b, Message>
+impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme> {
+    pub fn on_message<'b, F>(self, f: F) -> TitleBarMac<'b, Message, Theme>
     where
         F: Fn(TitlebarMessage) -> Message + 'b,
     {
@@ -93,6 +95,7 @@ impl<'a, Message> TitleBarMac<'a, Message> {
             icon_spacing: self.icon_spacing,
             resize_edge_size: self.resize_edge_size,
             on_message: Some(Box::new(f)),
+            _theme: std::marker::PhantomData,
         }
     }
 
@@ -134,11 +137,16 @@ impl<'a, Message> TitleBarMac<'a, Message> {
     }
 }
 
-impl<'a, Message> From<TitleBarMac<'a, Message>> for Element<'a, Message>
+impl<'a, Message, Theme> From<TitleBarMac<'a, Message, Theme>> for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
-    fn from(value: TitleBarMac<'a, Message>) -> Self {
+    fn from(value: TitleBarMac<'a, Message, Theme>) -> Self {
         let on_message = value.on_message.expect(
             "titlebar_mac: on_message must be set before converting to Element",
         );
@@ -155,19 +163,24 @@ where
     }
 }
 
-impl<'a, Message> TitleBarMac<'a, Message>
+impl<'a, Message, Theme> TitleBarMac<'a, Message, Theme>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     /// Titlebar on top of `content`, wrapped in resize handles (same behavior as [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content)).
     pub fn with_content(
         self,
-        content: impl Into<Element<'a, Message>>,
+        content: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
         to_resize: impl Fn(iced::window::Direction) -> Message + 'a,
-    ) -> Element<'a, Message> {
+    ) -> Element<'a, Message, Theme, iced::Renderer> {
         let resize_edge_size = self.resize_edge_size;
         let chrome = self.style;
-        let bar: Element<'a, Message> = self.into();
+        let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
         surround_with_resize_edges(
             bar,
             content.into(),
@@ -181,7 +194,7 @@ where
 /// Builds a custom titlebar with the given style (convenience wrapper around the builder).
 ///
 /// Prefer the builder form: `titlebar_mac(title).style(style).maximized(is_maximized).light_diameter(d).on_message(to_message).into()`.
-pub fn titlebar_mac_with_style<'a, Message>(
+pub fn titlebar_mac_with_style<'a, Message, Theme>(
     title: impl ToString,
     to_message: impl Fn(TitlebarMessage) -> Message + 'a,
     style: style::TitlebarStyle,
@@ -189,9 +202,14 @@ pub fn titlebar_mac_with_style<'a, Message>(
     is_maximized: bool,
     icon_spacing: f32,
     light_diameter: f32,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     build_titlebar_mac_element(
         title.to_string(),
@@ -205,7 +223,7 @@ where
     )
 }
 
-fn build_titlebar_mac_element<'a, Message>(
+fn build_titlebar_mac_element<'a, Message, Theme>(
     title_str: String,
     style: style::TitlebarStyle,
     height: f32,
@@ -214,9 +232,14 @@ fn build_titlebar_mac_element<'a, Message>(
     light_diameter: f32,
     icon_spacing: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
-) -> Element<'a, Message>
+) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
+    <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
+    <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
+    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
 
