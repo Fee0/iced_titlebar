@@ -36,13 +36,13 @@ where
     Message: Clone + 'a + 'static,
     Theme: container::Catalog + 'static,
 {
-    container(
-        mouse_area(title)
-            .on_press(to_message(TitlebarMessage::StartDrag))
-            .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
+    mouse_area(
+        container(title)
+            .width(Length::Fill)
+            .height(Length::Fill),
     )
-    .width(Length::Fill)
-    .height(Length::Fill)
+    .on_press(to_message(TitlebarMessage::StartDrag))
+    .on_double_click(to_message(TitlebarMessage::ToggleMaximize))
     .into()
 }
 
