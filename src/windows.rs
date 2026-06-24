@@ -27,8 +27,8 @@ pub const TITLEBAR_WINDOWS_CONTROL_WIDTH: f32 = 45.0;
 pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
     /// Element shown in the draggable title area. Can be any iced widget (text, row, image, …).
     pub title: Element<'a, Message, Theme, iced::Renderer>,
-    /// Visual style (bar/button colors, icon color).
-    pub style: style::TitlebarStyle,
+    /// Visual style override. `None` = auto-detect from the theme's light/dark mode at draw time.
+    pub style: Option<style::TitlebarStyle>,
     /// Height of the bar in pixels.
     pub height: f32,
     /// Whether the window is currently maximized. When true, the middle button shows the restore icon; otherwise the maximize icon.
@@ -69,7 +69,7 @@ pub fn titlebar_windows<'a, Message, Theme>(
 ) -> TitleBarWindows<'a, Message, Theme> {
     TitleBarWindows {
         title: title.into(),
-        style: style::TitlebarStyle::default(),
+        style: None,
         height: DEFAULT_TITLEBAR_HEIGHT,
         is_maximized: false,
         resize_edge_size: None,
@@ -88,9 +88,11 @@ impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
         self
     }
 
-    /// Sets the full [TitlebarStyle] (bar/button colors, border, icon color).
+    /// Overrides the auto-detected style with an explicit [TitlebarStyle]. By default the widget
+    /// selects [TitlebarStylePreset::Light](style::TitlebarStylePreset::Light) or
+    /// [TitlebarStylePreset::Dark](style::TitlebarStylePreset::Dark) based on the theme's mode.
     pub fn style(mut self, s: style::TitlebarStyle) -> Self {
-        self.style = s;
+        self.style = Some(s);
         self
     }
 
@@ -138,7 +140,7 @@ impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>>
     for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + iced::theme::Base + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
@@ -162,8 +164,12 @@ where
 impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme>
 where
     Message: Clone + 'a + 'static,
-    Theme:
-        button::Catalog + container::Catalog + svg::Catalog + iced::widget::text::Catalog + 'static,
+    Theme: button::Catalog
+        + container::Catalog
+        + svg::Catalog
+        + iced::widget::text::Catalog
+        + iced::theme::Base
+        + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
@@ -179,7 +185,7 @@ where
     ) -> Element<'a, Message, Theme, iced::Renderer> {
         let resize_edge_size = self.resize_edge_size;
         let border_width = self.border_width;
-        let chrome = self.style;
+        let chrome = self.style.unwrap_or_default();
         let bar: Element<'a, Message, Theme, iced::Renderer> = self.into();
         surround_with_resize_edges(
             bar,
@@ -195,7 +201,7 @@ where
 /// Builds a custom titlebar element. Used by [From] and [titlebar_windows_with_style].
 fn build_titlebar_windows_element<'a, Message, Theme>(
     title: Element<'a, Message, Theme, iced::Renderer>,
-    style: style::TitlebarStyle,
+    style: Option<style::TitlebarStyle>,
     height: f32,
     is_maximized: bool,
     icon_spacing: f32,
@@ -204,20 +210,16 @@ fn build_titlebar_windows_element<'a, Message, Theme>(
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + iced::theme::Base + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     let draggable = draggable_title_area(title, &*to_message);
 
-    let s_min = style;
-    let s_max = style;
-    let s_close = style;
-
     let min_icon = container(svg(minimize_handle()).width(10).height(10).style(
-        move |_theme, _status| svg::Style {
-            color: Some(s_min.icon),
+        move |theme: &Theme, _status| svg::Style {
+            color: Some(style.unwrap_or_else(|| style::auto_style(theme)).icon),
         },
     ))
     .width(Length::Fill)
@@ -234,8 +236,8 @@ where
         svg(max_handle)
             .width(10)
             .height(10)
-            .style(move |_theme, _status| svg::Style {
-                color: Some(s_max.icon),
+            .style(move |theme: &Theme, _status| svg::Style {
+                color: Some(style.unwrap_or_else(|| style::auto_style(theme)).icon),
             }),
     )
     .width(Length::Fill)
@@ -244,8 +246,8 @@ where
     .align_y(Alignment::Center);
 
     let close_icon = container(svg(close_handle()).width(10).height(10).style(
-        move |_theme, _status| svg::Style {
-            color: Some(s_close.icon),
+        move |theme: &Theme, _status| svg::Style {
+            color: Some(style.unwrap_or_else(|| style::auto_style(theme)).icon),
         },
     ))
     .width(Length::Fill)
@@ -255,19 +257,28 @@ where
 
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
-        .style(move |theme, status| style::min_max_button_style(&s_min, theme, status))
+        .style(move |theme: &Theme, status| {
+            let s = style.unwrap_or_else(|| style::auto_style(theme));
+            style::min_max_button_style(&s, theme, status)
+        })
         .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
     let max_btn = button(max_icon)
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
-        .style(move |theme, status| style::min_max_button_style(&s_max, theme, status))
+        .style(move |theme: &Theme, status| {
+            let s = style.unwrap_or_else(|| style::auto_style(theme));
+            style::min_max_button_style(&s, theme, status)
+        })
         .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
     let close_btn = button(close_icon)
         .on_press(to_message(TitlebarMessage::Close))
-        .style(move |theme, status| style::close_button_style(&s_close, theme, status))
+        .style(move |theme: &Theme, status| {
+            let s = style.unwrap_or_else(|| style::auto_style(theme));
+            style::close_button_style(&s, theme, status)
+        })
         .width(TITLEBAR_WINDOWS_CONTROL_WIDTH)
         .height(Length::Fill);
 
@@ -285,7 +296,7 @@ where
     .height(height)
     .align_y(Alignment::Center);
 
-    let bg = style.background;
+    let bg = style.and_then(|s| s.background);
     container(row)
         .height(height)
         .width(Length::Fill)
@@ -309,14 +320,14 @@ pub fn titlebar_windows_with_style<'a, Message, Theme>(
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + iced::theme::Base + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
 {
     build_titlebar_windows_element(
         title.into(),
-        style,
+        Some(style),
         DEFAULT_TITLEBAR_HEIGHT,
         is_maximized,
         icon_spacing,

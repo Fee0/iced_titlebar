@@ -84,6 +84,16 @@ impl TitlebarStyle {
     }
 }
 
+/// Returns the preset matching the theme's current light/dark mode.
+pub fn auto_style(theme: &impl iced::theme::Base) -> TitlebarStyle {
+    match theme.mode() {
+        iced::theme::Mode::Light => TitlebarStyle::preset(TitlebarStylePreset::Light),
+        iced::theme::Mode::Dark | iced::theme::Mode::None => {
+            TitlebarStyle::preset(TitlebarStylePreset::Dark)
+        }
+    }
+}
+
 /// Returns the button style for minimize and maximize: transparent by default, `button_hover` when hovered/pressed.
 pub fn min_max_button_style<Theme>(
     style: &TitlebarStyle,
